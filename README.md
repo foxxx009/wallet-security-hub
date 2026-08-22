@@ -31,7 +31,7 @@ A single-entry wallet-security toolkit — three tools in one client-side page. 
 
 ## Usage
 
-Open **https://foxxx009.github.io/wallet-security-hub/**, pick a tab, paste an address.
+Open **https://nope-9uk.pages.dev/**, pick a tab, paste an address.
 
 ⚠️ Scores are heuristic judgments based on public on-chain data. Not investment advice, not a substitute for a professional audit.
 
