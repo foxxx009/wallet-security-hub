@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Web3 Wallet Security Hub · 钱包安全中心</title>
+<title>Web3 Wallet Security Hub · Scan · Approvals · Blacklist</title>
 <style>
   :root{
     --bg:#0b0e14; --panel:#131722; --panel2:#1a2030; --line:#26304a;
@@ -100,7 +100,7 @@
       <div class="tag" data-i18n="appTag">地址扫描 · 授权巡检 · 合约黑名单 · 一个入口搞定钱包安全</div>
     </div>
     <div class="lang">
-      <button id="langZh" onclick="setLang('zh')">中文</button>
+      <button id="langZh" onclick="setLang('zh')">ZH</button>
       <button id="langEn" onclick="setLang('en')">EN</button>
     </div>
   </header>
@@ -118,7 +118,7 @@
   <div id="panelScan">
     <div class="card">
       <div class="row">
-        <input id="scanAddr" placeholder="粘贴 EVM 地址或代币合约 (0x...)" autocomplete="off" spellcheck="false" />
+        <input id="scanAddr" placeholder="Paste EVM address or token contract (0x...)" autocomplete="off" spellcheck="false" />
         <select id="scanChain">
           <option value="base">Base</option><option value="eth">Ethereum</option>
           <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
@@ -172,7 +172,7 @@
   <div id="panelApv" class="hidden">
     <div class="card">
       <div class="row">
-        <input id="apvAddr" placeholder="粘贴你的 EVM 钱包地址 (0x...)" autocomplete="off" spellcheck="false" />
+        <input id="apvAddr" placeholder="Paste your EVM wallet address (0x...)" autocomplete="off" spellcheck="false" />
         <select id="apvChain">
           <option value="base">Base</option><option value="eth">Ethereum</option>
           <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
@@ -222,7 +222,7 @@
   <div id="panelScam" class="hidden">
     <div class="card">
       <div class="row">
-        <input id="scamAddr" placeholder="粘贴代币/合约地址查询黑名单 (0x...)" autocomplete="off" spellcheck="false" />
+        <input id="scamAddr" placeholder="Paste token/contract address to check blacklist (0x...)" autocomplete="off" spellcheck="false" />
         <select id="scamChain">
           <option value="base">Base</option><option value="eth">Ethereum</option>
           <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
@@ -291,8 +291,8 @@
         <table class="chain-tbl" id="gasOpTbl"><tr><th data-i18n="gasOpName">操作</th><th>Gas Limit</th><th>预估费用</th></tr></table>
         <p class="section-title" style="margin-top:16px" data-i18n="gasPreTitle">交易预审（输入 to + data 估算）</p>
         <div class="row">
-          <input id="gasTo" placeholder="to (0x合约地址)" autocomplete="off" spellcheck="false" />
-          <input id="gasData" placeholder="data (0x...) 可选" autocomplete="off" spellcheck="false" />
+          <input id="gasTo" placeholder="to (0x contract address)" autocomplete="off" spellcheck="false" />
+          <input id="gasData" placeholder="data (0x...) optional" autocomplete="off" spellcheck="false" />
         </div>
         <div class="toolbar">
           <button class="ghost" onclick="fillCommon('transfer')" data-i18n="gasFillTransfer">填 transfer</button>
@@ -309,7 +309,7 @@
   <div id="panelSim" class="hidden">
     <div class="card">
       <div class="row">
-        <input id="simAddr" placeholder="合约地址 (0x...)" autocomplete="off" spellcheck="false" />
+        <input id="simAddr" placeholder="Contract address (0x...)" autocomplete="off" spellcheck="false" />
         <select id="simChain">
           <option value="base">Base</option><option value="eth">Ethereum</option>
           <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
@@ -362,14 +362,14 @@
       </div>
       <div class="note" data-i18n="simFreeNote2">把一笔还没发出的交易（from / to / data / value）拿来做链上 dry-run：免费看是否会 revert；支付 $0.06 解锁「执行后会发生什么」——余额、授权额度、目标合约黑名单命中对比报告。不发送任何交易。</div>
       <div class="row" style="margin-top:10px">
-        <input id="simFrom" placeholder="from（你的地址 0x...）" autocomplete="off" spellcheck="false" style="flex:2" />
+        <input id="simFrom" placeholder="from (your address 0x...)" autocomplete="off" spellcheck="false" style="flex:2" />
       </div>
       <div class="row" style="margin-top:8px">
-        <input id="simTo" placeholder="to（合约地址 0x...）" autocomplete="off" spellcheck="false" style="flex:2" />
-        <input id="simValue" placeholder="value（单位 wei，默认 0）" autocomplete="off" spellcheck="false" style="flex:1" />
+        <input id="simTo" placeholder="to (contract address 0x...)" autocomplete="off" spellcheck="false" style="flex:2" />
+        <input id="simValue" placeholder="value (in wei, default 0)" autocomplete="off" spellcheck="false" style="flex:1" />
       </div>
       <div class="row" style="margin-top:8px">
-        <input id="simData" placeholder="data（0x... 函数调用，可留空）" autocomplete="off" spellcheck="false" style="flex:3" />
+        <input id="simData" placeholder="data (0x... function call, optional)" autocomplete="off" spellcheck="false" style="flex:3" />
       </div>
       <div class="toolbar" style="margin-top:10px">
         <button class="ghost" onclick="simFill('approve')" data-i18n="simFillApprove">填 approve</button>
@@ -505,6 +505,7 @@ const T = {
     gasFillTransfer:"填 transfer", gasFillApprove:"填 approve", gasFillSwap:"填 swap(估算)",
     gasPreBtn:"预审这笔交易", gasPreNote:"预审仅估算 Gas，不发送交易。approve/swap 的 data 需对应链上函数签名，估算值仅供参考。",
     gasScanning:"查询中…", gasErr:"Gas 查询失败：", gasPreErr:"预审失败：", gasNoChain:"请先选择链",
+    gasOpVal:"值", gasEstFee:"预估费用",
     t_simulate:"交易模拟", t_simulate_s:"预执行 · $0.06",
     simRunBtn:"免费预执行", simFreeNote2:"把一笔还没发出的交易（from / to / data / value）拿来做链上 dry-run：免费看是否会 revert；支付 $0.06 解锁「执行后会发生什么」——余额、授权额度、目标合约黑名单命中对比报告。不发送任何交易。",
     simFillApprove:"填 approve", simFillTransfer:"填 transfer", simFillPermit:"填 permit", simFreeTitle2:"预执行结果（免费）",
@@ -602,6 +603,7 @@ const T = {
     gasFillTransfer:"Fill transfer", gasFillApprove:"Fill approve", gasFillSwap:"Fill swap (est.)",
     gasPreBtn:"Pre-check this tx", gasPreNote:"Pre-check only estimates gas, does not send. approve/swap data needs the on-chain function signature; estimate is for reference.",
     gasScanning:"Querying…", gasErr:"Gas query failed: ", gasPreErr:"Pre-check failed: ", gasNoChain:"Please select a chain",
+    gasOpVal:"Value", gasEstFee:"Estimated fee",
     t_simulate:"Tx Simulate", t_simulate_s:"Pre-exec · $0.06",
     simRunBtn:"Free dry-run", simFreeNote2:"Dry-run a not-yet-sent tx (from / to / data / value) on-chain: free to see if it reverts; pay $0.06 to unlock \"what happens after execution\" — balance, allowance change, target blacklist hit. No tx is sent.",
     simFillApprove:"Fill approve", simFillTransfer:"Fill transfer", simFillPermit:"Fill permit", simFreeTitle2:"Dry-run result (free)",
@@ -617,7 +619,7 @@ const T = {
     simErr:"Impact eval failed: ", simDisclaimer2:"⚠️ Dry-run estimates balance/allowance changes from current on-chain state; cannot cover internal conditional branches. Actual result on-chain may differ."
   }
 };
-let lang = (localStorage.getItem('hub_lang')||'zh');
+let lang = (localStorage.getItem('hub_lang')||'en');
 function t(k, vars){ let s = (T[lang]&&T[lang][k]!=null)? T[lang][k] : (T.zh[k]!=null? T.zh[k] : k);
   if(vars) for(const [kk,vv] of Object.entries(vars)) s = s.replace('{'+kk+'}', vv); return s; }
 
@@ -1233,10 +1235,10 @@ async function runGasPre(){
     const priceUsd=NATIVE_USD[chain]||3000;
     const costUsd=(gwei*gl/1e9)*priceUsd; const costNative=(gwei*gl/1e9);
     document.getElementById('gasPreBody').innerHTML=
-      `<table class="chain-tbl"><tr><th>${t('gasOpName')}</th><th>值</th></tr>`+
+      `<table class="chain-tbl"><tr><th>${t('gasOpName')}</th><th>${t('gasOpVal')}</th></tr>`+
       `<tr><td>Gas Limit (estimate)</td><td>${gl.toLocaleString()}</td></tr>`+
       `<tr><td>Gas Price</td><td>${gwei.toFixed(2)} gwei</td></tr>`+
-      `<tr><td>预估费用</td><td>$${costUsd.toFixed(4)} (≈${costNative.toFixed(6)} ${chain.toUpperCase()})</td></tr></table>`;
+      `<tr><td>${t('gasEstFee')}</td><td>$${costUsd.toFixed(4)} (≈${costNative.toFixed(6)} ${chain.toUpperCase()})</td></tr></table>`;
   }catch(e){ toast(t('gasPreErr')+e.message); }
   finally{ btn.disabled=false; btn.textContent=t('gasPreBtn'); }
 }
