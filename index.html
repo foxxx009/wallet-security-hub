@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Web3 Wallet Security Hub · 钱包安全中心</title>
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#131722; --panel2:#1a2030; --line:#26304a;
+    --txt:#e6edf3; --muted:#8b97ad; --accent:#3b82f6; --good:#22c55e;
+    --warn:#f59e0b; --bad:#ef4444; --usdc:#2775ca;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 90px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+  .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#3b82f6,#22c55e,#ef4444);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;color:#fff}
+  h1{font-size:21px;margin:0}
+  .tag{font-size:12px;color:var(--muted)}
+  .lang{margin-left:auto}
+  .lang button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:6px 12px;font-size:13px;border-radius:8px;cursor:pointer}
+  .lang button.active{color:#fff;border-color:var(--accent);background:var(--accent)}
+  .tabs{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+  .tab{flex:1;min-width:120px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:11px 8px;font-size:14px;font-weight:600;border-radius:11px 11px 0 0;cursor:pointer;text-align:center;transition:.15s}
+  .tab.active{color:#fff;border-color:var(--accent);background:linear-gradient(180deg,var(--panel),var(--panel2));border-bottom-color:var(--panel)}
+  .tab small{display:block;font-weight:400;font-size:11px;opacity:.7;margin-top:2px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:0 0 14px 14px;padding:18px;margin-bottom:0}
+  .card.round{border-radius:14px;margin-top:18px}
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  input,select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px 14px;font-size:15px;outline:none}
+  input{flex:1;min-width:240px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  input:focus,select:focus{border-color:var(--accent)}
+  button{cursor:pointer;border:none;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:600;background:var(--accent);color:#fff;transition:.15s}
+  button:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .ghost{background:transparent;border:1px solid var(--line);color:var(--txt)}
+  .usdc-btn{background:var(--usdc)}
+  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 12px}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .kv:last-child{border-bottom:none}
+  .kv .k{color:var(--muted);flex-shrink:0}
+  .kv .v{text-align:right;word-break:break-all;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .flag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;margin:3px 4px 3px 0}
+  .f-good{background:rgba(34,197,94,.15);color:var(--good)}
+  .f-warn{background:rgba(245,158,11,.15);color:var(--warn)}
+  .f-bad{background:rgba(239,68,68,.15);color:var(--bad)}
+  .hidden{display:none!important}
+  .muted{color:var(--muted);font-size:13px}
+  .note{font-size:12px;color:var(--muted);margin-top:8px}
+  .locked{text-align:center;padding:24px 10px;background:var(--panel2);border-radius:12px;border:1px dashed var(--line)}
+  .wallet{margin-top:14px;font-size:12px;color:var(--muted);word-break:break-all;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);padding:12px 18px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:50;max-width:90vw;text-align:center}
+  .toast.show{opacity:1}
+  .spinner{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:12px}
+  a{color:var(--accent)}
+  .score{font-size:46px;font-weight:800;text-align:center;margin:6px 0}
+  .score-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px}
+  .audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+  .audit-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+  .audit-item .a-k{font-size:12px;color:var(--muted)}
+  .audit-item .a-v{font-size:14px;font-weight:600;margin-top:3px}
+  .scorebar{height:10px;border-radius:999px;background:var(--panel2);overflow:hidden;margin:4px 0 6px}
+  .scorebar-fill{height:100%;border-radius:999px;transition:width .5s}
+  .subscore{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);padding:3px 0}
+  .subscore b{color:var(--txt)}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .toolbar button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 14px;font-size:13px;border-radius:8px}
+  .summary-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .summary-pill{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center}
+  .summary-pill .n{font-size:24px;font-weight:800}
+  .summary-pill .l{font-size:12px;color:var(--muted)}
+  .apv-row{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel2)}
+  .apv-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+  .apv-token{font-weight:600;font-size:14px}
+  .apv-spender{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);word-break:break-all;margin-top:4px}
+  .apv-amt{font-size:13px;margin-top:4px}
+  .apv-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .b-high{background:rgba(239,68,68,.18);color:var(--bad)}
+  .b-mid{background:rgba(245,158,11,.18);color:var(--warn)}
+  .b-low{background:rgba(34,197,94,.15);color:var(--good)}
+  .infinite{color:var(--bad);font-weight:700}
+  .result-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all;white-space:pre-wrap}
+  .verdict{text-align:center;font-weight:700;padding:8px;border-radius:8px;margin-top:10px;font-size:14px}
+  .chain-tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .chain-tbl th,.chain-tbl td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  .chain-tbl th{color:var(--muted);font-weight:600}
+  .holder-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace}
+  .scam-hit{border:1px solid var(--bad);background:rgba(239,68,68,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  @media(max-width:560px){.audit-grid{grid-template-columns:1fr}.tab{min-width:90px;font-size:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">W</div>
+    <div>
+      <h1>Web3 Wallet Security Hub</h1>
+      <div class="tag" data-i18n="appTag">地址扫描 · 授权巡检 · 合约黑名单 · 一个入口搞定钱包安全</div>
+    </div>
+    <div class="lang">
+      <button id="langZh" onclick="setLang('zh')">中文</button>
+      <button id="langEn" onclick="setLang('en')">EN</button>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab active" id="tabScan" onclick="switchTab('scan')">🔍 <span data-i18n="t_scan">地址扫描</span><small data-i18n="t_scan_s">SafeScan · $0.05</small></div>
+    <div class="tab" id="tabApv" onclick="switchTab('apv')">🛡️ <span data-i18n="t_apv">授权巡检</span><small data-i18n="t_apv_s">Approval Guard · $0.02</small></div>
+    <div class="tab" id="tabScam" onclick="switchTab('scam')">⚫ <span data-i18n="t_scam">合约黑名单</span><small data-i18n="t_scam_s">黑名单查询 · $0.03</small></div>
+  </div>
+
+  <!-- ============ TAB 1: Address Scan (SafeScan) ============ -->
+  <div id="panelScan">
+    <div class="card">
+      <div class="row">
+        <input id="scanAddr" placeholder="粘贴 EVM 地址或代币合约 (0x...)" autocomplete="off" spellcheck="false" />
+        <select id="scanChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="scanBtn" onclick="runScan()" data-i18n="scanBtn">免费扫描</button>
+      </div>
+      <div class="note" data-i18n="scanFreeNote">支持任意 EVM 地址或代币合约。基础版免费、无需连接钱包。解锁 $0.05 看权限审计+流动性锁+风险评分。</div>
+      <div class="toolbar">
+        <button id="mcBtn" onclick="multiScan()" data-i18n="mcBtn">🌐 多链对比</button>
+        <button id="shareBtn" onclick="shareLink('scan')" data-i18n="shareBtn">🔗 复制分享链接</button>
+      </div>
+    </div>
+    <div class="card round hidden" id="mcCard"><div id="mcBody"></div></div>
+    <div id="scanResult" class="hidden">
+      <div class="card round" id="scanFreeCard">
+        <p class="section-title" data-i18n="freeTitle">基础扫描结果（免费）</p>
+        <div id="scanFreeBody"></div>
+        <div id="scanFreeFlags" style="margin-top:10px"></div>
+      </div>
+      <div class="card round" id="scanGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="gateTitleS">🔓 解锁深度风险报告</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="gateDescS">代币权限审计 · 流动性锁仓 · 持仓集中度 · rug 风险评分 · 多链关联 · 可导出 JSON</div>
+          <button class="usdc-btn" id="scanPayBtn" onclick="startPayment('scan')" data-i18n="payBtnS">支付 $0.05 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('scan')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+          </div>
+          <div class="note" data-i18n="gateNoteS">用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。</div>
+          <div id="scanQrBox" class="hidden" style="margin-top:14px">
+            <div id="scanQrImg" style="display:inline-block;background:#fff;padding:10px;border-radius:10px"></div>
+            <div class="note" data-i18n="qrNoteS">用 MetaMask / Trust Wallet 扫码 → 确认转账 0.05 USDC，回到本页点「我已支付」自动解锁。</div>
+            <button class="ghost" onclick="pollPaid('scan')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+        </div>
+      </div>
+      <div class="card round hidden" id="scanPremiumCard">
+        <p class="section-title" data-i18n="premiumTitleS">深度风险报告（已解锁）</p>
+        <div class="score" id="scanRiskScore">–</div>
+        <div class="score-sub" id="scanRiskLabel"></div>
+        <div id="scanPremiumBody"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="ghost" onclick="exportReport('scan')" data-i18n="exportBtn">导出 JSON 报告</button>
+          <button class="ghost" onclick="switchTab('scan');document.getElementById('scanAddr').value='';document.getElementById('scanResult').classList.add('hidden')" data-i18n="newScanBtn">新扫描</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 2: Approval Guard ============ -->
+  <div id="panelApv" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="apvAddr" placeholder="粘贴你的 EVM 钱包地址 (0x...)" autocomplete="off" spellcheck="false" />
+        <select id="apvChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="apvBtn" onclick="runApv()" data-i18n="apvBtn">免费巡检</button>
+      </div>
+      <div class="note" data-i18n="apvFreeNote">输入钱包地址查看所有 ERC-20/721 授权。基础巡检免费。支付 $0.02 解锁撤销交易生成。</div>
+      <div class="toolbar">
+        <button onclick="shareLink('apv')" data-i18n="shareBtn">🔗 复制分享链接</button>
+      </div>
+    </div>
+    <div id="apvResult" class="hidden">
+      <div class="card round" id="apvFreeCard">
+        <p class="section-title" data-i18n="apvFreeTitle">授权巡检结果（免费）</p>
+        <div id="apvSummary" class="summary-bar"></div>
+        <div id="apvFreeBody"></div>
+      </div>
+      <div class="card round" id="apvGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="gateTitleA">🔓 解锁「撤销交易生成器」</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="gateDescA">为每个危险授权一键生成 approve(spender,0) 撤销交易 · EIP-681 扫码撤销 · 批量清单</div>
+          <button class="usdc-btn" id="apvPayBtn" onclick="startPayment('apv')" data-i18n="payBtnA">支付 $0.02 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('apv')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+          </div>
+          <div class="note" data-i18n="gateNoteA">用你的钱包向本站收款地址支付 0.02 USDC（Base 链），链上确认后自动解锁。</div>
+          <div id="apvQrBox" class="hidden" style="margin-top:14px">
+            <div id="apvQrImg" style="display:inline-block;background:#fff;padding:10px;border-radius:10px"></div>
+            <div class="note" data-i18n="qrNoteA">用 MetaMask / Trust Wallet 扫码 → 确认转账 0.02 USDC，回到本页点「我已支付」自动解锁。</div>
+            <button class="ghost" onclick="pollPaid('apv')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+        </div>
+      </div>
+      <div class="card round hidden" id="apvPremiumCard">
+        <p class="section-title" data-i18n="premiumTitleA">撤销交易生成器（已解锁）</p>
+        <div id="apvPremiumBody"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="ghost" onclick="exportRevokeList()" data-i18n="exportBtnA">导出撤销清单 (JSON)</button>
+          <button class="ghost" onclick="switchTab('apv');document.getElementById('apvAddr').value='';document.getElementById('apvResult').classList.add('hidden')" data-i18n="newScanBtn">新巡检</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 3: Contract Blacklist ============ -->
+  <div id="panelScam" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="scamAddr" placeholder="粘贴代币/合约地址查询黑名单 (0x...)" autocomplete="off" spellcheck="false" />
+        <select id="scamChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="scamBtn" onclick="runScam()" data-i18n="scamBtn">免费查询</button>
+      </div>
+      <div class="note" data-i18n="scamFreeNote">输入代币或合约地址，免费比对已知 scam 特征与权限风险。支付 $0.03 解锁完整风险报告。</div>
+    </div>
+    <div id="scamResult" class="hidden">
+      <div class="card round" id="scamFreeCard">
+        <p class="section-title" data-i18n="scamFreeTitle">黑名单 / 特征速查（免费）</p>
+        <div id="scamFreeBody"></div>
+      </div>
+      <div class="card round" id="scamGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="gateTitleX">🔓 解锁完整风险报告</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="gateDescX">蜜罐特征 · 权限后门 · 已知 scam 命中 · 风险评分 · 可导出 JSON</div>
+          <button class="usdc-btn" id="scamPayBtn" onclick="startPayment('scam')" data-i18n="payBtnX">支付 $0.03 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('scam')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+          </div>
+          <div class="note" data-i18n="gateNoteX">用你的钱包向本站收款地址支付 0.03 USDC（Base 链），链上确认后自动解锁。</div>
+          <div id="scamQrBox" class="hidden" style="margin-top:14px">
+            <div id="scamQrImg" style="display:inline-block;background:#fff;padding:10px;border-radius:10px"></div>
+            <div class="note" data-i18n="qrNoteX">用 MetaMask / Trust Wallet 扫码 → 确认转账 0.03 USDC，回到本页点「我已支付」自动解锁。</div>
+            <button class="ghost" onclick="pollPaid('scam')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+        </div>
+      </div>
+      <div class="card round hidden" id="scamPremiumCard">
+        <p class="section-title" data-i18n="premiumTitleX">完整风险报告（已解锁）</p>
+        <div class="score" id="scamRiskScore">–</div>
+        <div class="score-sub" id="scamRiskLabel"></div>
+        <div id="scamPremiumBody"></div>
+        <div class="row" style="margin-top:14px">
+          <button class="ghost" onclick="exportReport('scam')" data-i18n="exportBtnX">导出 JSON 报告</button>
+          <button class="ghost" onclick="switchTab('scam');document.getElementById('scamAddr').value='';document.getElementById('scamResult').classList.add('hidden')" data-i18n="newScanBtn">新查询</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wallet">
+    <span data-i18n="recvAddr">统一收款地址（USDC on Base）：</span><code>0x2409b47a530be3831158f10b08ac93f7d08c1ff2</code><br/>
+    <span data-i18n="recvNote">Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== i18n ===================== */
+const T = {
+  zh:{
+    appTag:"地址扫描 · 授权巡检 · 合约黑名单 · 一个入口搞定钱包安全",
+    t_scan:"地址扫描", t_scan_s:"SafeScan · $0.05", t_apv:"授权巡检", t_apv_s:"Approval Guard · $0.02",
+    t_scam:"合约黑名单", t_scam_s:"黑名单查询 · $0.03",
+    scanBtn:"免费扫描", apvBtn:"免费巡检", scamBtn:"免费查询",
+    scanFreeNote:"支持任意 EVM 地址或代币合约。基础版免费、无需连接钱包。解锁 $0.05 看权限审计+流动性锁+风险评分。",
+    apvFreeNote:"输入钱包地址查看所有 ERC-20/721 授权。基础巡检免费。支付 $0.02 解锁撤销交易生成。",
+    scamFreeNote:"输入代币或合约地址，免费比对已知 scam 特征与权限风险。支付 $0.03 解锁完整风险报告。",
+    mcBtn:"🌐 多链对比", shareBtn:"🔗 复制分享链接",
+    freeTitle:"基础扫描结果（免费）",
+    gateTitleS:"🔓 解锁深度风险报告", gateDescS:"代币权限审计 · 流动性锁仓 · 持仓集中度 · rug 风险评分 · 多链关联 · 可导出 JSON",
+    payBtnS:"支付 $0.05 USDC 解锁", gateNoteS:"用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。",
+    qrNoteS:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.05 USDC，回到本页点「我已支付」自动解锁。",
+    premiumTitleS:"深度风险报告（已解锁）", exportBtn:"导出 JSON 报告", newScanBtn:"新扫描",
+    apvFreeTitle:"授权巡检结果（免费）",
+    gateTitleA:"🔓 解锁「撤销交易生成器」", gateDescA:"为每个危险授权一键生成 approve(spender,0) 撤销交易 · EIP-681 扫码撤销 · 批量清单",
+    payBtnA:"支付 $0.02 USDC 解锁", gateNoteA:"用你的钱包向本站收款地址支付 0.02 USDC（Base 链），链上确认后自动解锁。",
+    qrNoteA:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.02 USDC，回到本页点「我已支付」自动解锁。",
+    premiumTitleA:"撤销交易生成器（已解锁）", exportBtnA:"导出撤销清单 (JSON)",
+    scamFreeTitle:"黑名单 / 特征速查（免费）",
+    gateTitleX:"🔓 解锁完整风险报告", gateDescX:"蜜罐特征 · 权限后门 · 已知 scam 命中 · 风险评分 · 可导出 JSON",
+    payBtnX:"支付 $0.03 USDC 解锁", gateNoteX:"用你的钱包向本站收款地址支付 0.03 USDC（Base 链），链上确认后自动解锁。",
+    qrNoteX:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.03 USDC，回到本页点「我已支付」自动解锁。",
+    premiumTitleX:"完整风险报告（已解锁）", exportBtnX:"导出 JSON 报告",
+    qrBtn:"📱 手机扫码付", copyAddrBtn:"📋 复制收款地址", afterPayBtn:"✅ 我已支付，解锁",
+    recvAddr:"统一收款地址（USDC on Base）：", recvNote:"Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。",
+    scanning:"扫描中…", apvScanning:"巡检中…", scamScanning:"查询中…",
+    errAddr:"地址格式不正确", errScan:"扫描失败：",
+    type:"类型", contract:"合约 (Contract)", eoa:"外部账户 (EOA)",
+    nativeBal:"原生币余额", usdcBal:"USDC 余额", firstTx:"首笔交易", txCount:"交易笔数",
+    unknown:"未知/无交易", tokenMeta:"代币信息", name:"名称", symbol:"符号", decimals:"精度", totalSupply:"总供应量",
+    owner:"Owner", ownerRenounced:"已放弃 (Renounced)", ownerPresent:"未放弃 (中心化风险)", noOwner:"无集中 owner / 不可识别", notToken:"（非代币合约）",
+    permAudit:"代币权限审计", proxy:"可升级代理 (Proxy)", mint:"Mint 增发函数", pause:"Pause 暂停函数", routerApprove:"Owner 已授权 Router 动用代币",
+    liquidity:"流动性锁仓", pairFound:"检测到交易对 (LP)", pairNone:"未检测到主流 WETH 流动性对",
+    lpBurned:"LP 已销毁比例", lpOwner:"Owner 持有 LP 比例", lpReserve:"WETH 流动性储备", verdict:"判定",
+    locked:"流动性已永久锁定 (销毁)", partial:"部分流动性锁定", ownerCtrl:"流动性由部署者控制 (Rug 风险)", circulating:"流动性分散流通 (无法确认锁定)",
+    holderConc:"持仓集中度 (Top Holders)", riskScore:"风险评分", scoreSub:"（启发式评分，仅供参考）",
+    disclaimer:"⚠️ 本评分为基于公开链上数据的启发式判断，不构成投资建议。链上分析无法替代专业审计。",
+    findings:"关键发现", yes:"是", no:"否", na:"—", recode:"重新计算…",
+    walletMissing:"未检测到钱包，请安装 MetaMask 等浏览器钱包", walletDeny:"钱包授权被拒绝", chainSwitch:"请手动切换到 Base 链再支付",
+    payCancel:"支付取消：", paySubmit:"交易已提交，正在链上确认…", payFail:"未检测到有效付款，请稍后重试", unlocked:"✓ 已解锁",
+    exportNeed:"请先解锁报告", noData:"（无数据）",
+    r_newAcct:"账户/合约较新（<7天）", r_ageDays:"账户存在时间 {n} 天", r_lowTx:"合约交易量极低",
+    r_ownerRenounced:"Owner 已放弃，无单点控制", r_proxy:"检测到可升级代理（实现可替换，高风险）",
+    r_mint:"合约含 Mint 增发函数（可无限增发稀释）", r_pause:"合约含 Pause 暂停函数（可冻结交易）",
+    r_routerApprove:"Owner 已授权 Router 大额动用代币", r_lpBurned:"流动性已销毁锁定 ({p}%)",
+    r_lpPartial:"部分流动性已锁定 ({p}%)", r_lpOwnerCtrl:"流动性由部署者控制，存在撤池/Rug 风险",
+    r_lpCirculating:"流动性分散流通，无法确认锁仓", r_lpNoPair:"未检测到主流流动性对，无法评估锁仓",
+    f_contractNoTx:"合约地址但查无交易——可能为新部署或假合约", f_goodAddr:"基础指标未见明显异常 · 解锁可查代币权限/流动性深度审计",
+    f_goodToken:"代币已识别 · 解锁完整权限/流动性审计（$0.05）", l_high:"高风险", l_mid:"中等风险", l_low:"低风险",
+    f_unknown:"（无交易历史信号）", f_noTx:"无交易历史（高风险信号）",
+    mcTitle:"多链对比（快速 RPC 直查）", chainLabel:"链", label:"标签", knownContract:"已知合约",
+    holdersUnavail:"未获取到持仓数据（建议在链上浏览器查看）", top1Pct:"第一大持仓占比", topHolders:"Top 持仓",
+    scoreBreakdown:"评分拆解", subAddr:"地址层", subPerm:"权限层", subLiq:"流动性层",
+    totalApv:"活跃授权总数", highRisk:"高危授权", infApv:"无限授权",
+    token:"代币", spender:"被授权方 (Spender)", amount:"授权额度", risk:"风险",
+    unknownSpender:"未知合约（未收录，建议撤销）", knownSpender:"已知合约", infinite:"∞ 无限授权",
+    noApprovals:"✓ 未发现任何活跃授权（钱包干净）",
+    rInf:"无限授权（spender 可转空你的全部余额）", rUnknown:"被授权方未收录于已知合约库（可能已风控或钓鱼）",
+    rKnownRisk:"已知高风险/已标记合约", rOk:"常规 DEX / 协议授权",
+    revokeFor:"为以下授权生成撤销交易（点击复制 / 扫码）：", revokeOne:"生成撤销交易", copyTx:"复制", scanTx:"扫码撤销",
+    allClean:"钱包无高危授权，无需撤销。", highOnly:"仅高危可撤销", walletNote:"撤销交易需在你的钱包中确认（向代币合约发送 approve(spender,0)）。每笔撤销是一笔独立交易，需支付对应链 gas。",
+    addrCopied:"✓ 收款地址已复制", shareCopied:"✓ 分享链接已复制",
+    scamHit:"⚠ 命中已知风险特征", scamClean:"✓ 未命中内置已知 scam 特征库", scamKnown:"已知合约（白名单）",
+    honeyPot:"疑似蜜罐特征", backdoor:"疑似权限后门", bytecodeFeature:"字节码特征",
+    scamScore:"风险评分", scamList:"命中项", scamPerm:"权限审计", scamSummary:"综合判定"
+  },
+  en:{
+    appTag:"Address scan · Approval guard · Contract blacklist · one entry for wallet safety",
+    t_scan:"Address Scan", t_scan_s:"SafeScan · $0.05", t_apv:"Approval Guard", t_apv_s:"Approval Guard · $0.02",
+    t_scam:"Contract Blacklist", t_scam_s:"Blacklist · $0.03",
+    scanBtn:"Free Scan", apvBtn:"Free Scan", scamBtn:"Free Check",
+    scanFreeNote:"Any EVM address or token contract. Basic scan free, no wallet. Unlock $0.05 for permission audit + liquidity lock + risk score.",
+    apvFreeNote:"Paste wallet to see all ERC-20/721 approvals. Basic scan free. Pay $0.02 to unlock revoke-tx generation.",
+    scamFreeNote:"Paste token/contract to compare against known scam traits & permission risk. Pay $0.03 for full report.",
+    mcBtn:"🌐 Multi-chain", shareBtn:"🔗 Copy share link",
+    freeTitle:"Basic Scan Result (Free)",
+    gateTitleS:"🔓 Unlock Deep Risk Report", gateDescS:"Token permission audit · Liquidity lock · Holder concentration · Rug-risk score · Multi-chain · JSON export",
+    payBtnS:"Pay $0.05 USDC to unlock", gateNoteS:"Pay 0.05 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
+    qrNoteS:"Scan with MetaMask / Trust Wallet → confirm 0.05 USDC, then tap 'I've paid' to unlock.",
+    premiumTitleS:"Deep Risk Report (Unlocked)", exportBtn:"Export JSON Report", newScanBtn:"New Scan",
+    apvFreeTitle:"Approval Scan Result (Free)",
+    gateTitleA:"🔓 Unlock Revoke Generator", gateDescA:"Generate approve(spender,0) revoke tx per risky approval · EIP-681 scan-to-revoke · batch list",
+    payBtnA:"Pay $0.02 USDC to unlock", gateNoteA:"Pay 0.02 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
+    qrNoteA:"Scan with MetaMask / Trust Wallet → confirm 0.02 USDC, then tap 'I've paid' to unlock.",
+    premiumTitleA:"Revoke Generator (Unlocked)", exportBtnA:"Export revoke list (JSON)",
+    scamFreeTitle:"Blacklist / Trait Check (Free)",
+    gateTitleX:"🔓 Unlock Full Risk Report", gateDescX:"Honeypot traits · Permission backdoor · Known scam hits · Risk score · JSON export",
+    payBtnX:"Pay $0.03 USDC to unlock", gateNoteX:"Pay 0.03 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
+    qrNoteX:"Scan with MetaMask / Trust Wallet → confirm 0.03 USDC, then tap 'I've paid' to unlock.",
+    premiumTitleX:"Full Risk Report (Unlocked)", exportBtnX:"Export JSON Report",
+    qrBtn:"📱 Pay by phone scan", copyAddrBtn:"📋 Copy address", afterPayBtn:"✅ I've paid, unlock",
+    recvAddr:"Our receiving address (USDC on Base): ", recvNote:"Wallet Security Hub is an aggregator. All three modules share one address; payments settle in USDC directly — no platform fee, no escrow.",
+    scanning:"Scanning…", apvScanning:"Scanning…", scamScanning:"Checking…",
+    errAddr:"Invalid address format", errScan:"Scan failed: ",
+    type:"Type", contract:"Contract", eoa:"Externally Owned Account (EOA)",
+    nativeBal:"Native balance", usdcBal:"USDC balance", firstTx:"First transaction", txCount:"Tx count",
+    unknown:"Unknown / no transactions", tokenMeta:"Token Info", name:"Name", symbol:"Symbol", decimals:"Decimals", totalSupply:"Total supply",
+    owner:"Owner", ownerRenounced:"Renounced", ownerPresent:"Not renounced (centralization risk)", noOwner:"No central owner / not identifiable", notToken:"(not a token contract)",
+    permAudit:"Token Permission Audit", proxy:"Upgradeable Proxy", mint:"Mint function", pause:"Pause function", routerApprove:"Owner approved Router to spend tokens",
+    liquidity:"Liquidity Lock", pairFound:"Liquidity pair (LP) detected", pairNone:"No major (WETH) liquidity pair detected",
+    lpBurned:"LP burned ratio", lpOwner:"Owner LP share", lpReserve:"WETH liquidity reserve", verdict:"Verdict",
+    locked:"Liquidity permanently locked (burned)", partial:"Partially locked liquidity", ownerCtrl:"Liquidity controlled by deployer (rug risk)", circulating:"Liquidity in circulation (lock unconfirmed)",
+    holderConc:"Holder Concentration (Top Holders)", riskScore:"Risk Score", scoreSub:"(heuristic score, for reference only)",
+    disclaimer:"⚠️ This score is heuristic, based on public on-chain data, not investment advice. On-chain analysis cannot replace a professional audit.",
+    findings:"Key Findings", yes:"Yes", no:"No", na:"—", recode:"Computing…",
+    walletMissing:"No wallet detected. Please install MetaMask or similar.", walletDeny:"Wallet authorization denied", chainSwitch:"Please switch to the Base chain manually before paying",
+    payCancel:"Payment cancelled: ", paySubmit:"Transaction submitted, confirming on-chain…", payFail:"No valid payment detected. Please try again later.", unlocked:"✓ Unlocked",
+    exportNeed:"Please unlock first", noData:"(no data)",
+    r_newAcct:"Account/contract is new (<7 days)", r_ageDays:"Account age {n} days", r_lowTx:"Very low contract transaction volume",
+    r_ownerRenounced:"Owner renounced — no single point of control", r_proxy:"Upgradeable proxy detected (implementation can be replaced — high risk)",
+    r_mint:"Mint function present (unlimited inflation possible)", r_pause:"Pause function present (trading can be frozen)",
+    r_routerApprove:"Owner approved Router to spend tokens", r_lpBurned:"Liquidity burned & locked ({p}%)",
+    r_lpPartial:"Partially locked ({p}%)", r_lpOwnerCtrl:"Liquidity controlled by deployer — rug risk",
+    r_lpCirculating:"Liquidity in circulation — lock unconfirmed", r_lpNoPair:"No major liquidity pair detected",
+    f_contractNoTx:"Contract address with no transactions — may be new or fake", f_goodAddr:"No obvious red flags · Unlock token permission & liquidity deep audit",
+    f_goodToken:"Token detected · Unlock full permission & liquidity audit ($0.05)", l_high:"High Risk", l_mid:"Medium Risk", l_low:"Low Risk",
+    f_unknown:"(no transaction history signal)", f_noTx:"No transaction history (high-risk signal)",
+    mcTitle:"Multi-chain Comparison (fast RPC)", chainLabel:"Chain", label:"Label", knownContract:"Known contract",
+    holdersUnavail:"Holder data unavailable (check the explorer)", top1Pct:"Top-1 holder share", topHolders:"Top holders",
+    scoreBreakdown:"Score breakdown", subAddr:"Address", subPerm:"Permissions", subLiq:"Liquidity",
+    totalApv:"Total active approvals", highRisk:"High-risk approvals", infApv:"Unlimited approvals",
+    token:"Token", spender:"Spender", amount:"Allowance", risk:"Risk",
+    unknownSpender:"Unknown contract (not in known list — recommend revoke)", knownSpender:"Known contract", infinite:"∞ Unlimited",
+    noApprovals:"✓ No active approvals found (wallet is clean)",
+    rInf:"Unlimited approval (spender can drain your full balance)", rUnknown:"Spender not in known contract list (may be flagged/phishing)",
+    rKnownRisk:"Known high-risk / flagged contract", rOk:"Regular DEX / protocol approval",
+    revokeFor:"Generate revoke transactions for these approvals (click to copy / scan):", revokeOne:"Generate revoke tx", copyTx:"Copy", scanTx:"Scan to revoke",
+    allClean:"No high-risk approvals — nothing to revoke.", highOnly:"High-risk only", walletNote:"Each revoke is a separate tx sent to the token contract (approve(spender,0)). Gas on the respective chain applies.",
+    addrCopied:"✓ Address copied", shareCopied:"✓ Share link copied",
+    scamHit:"⚠ Matched a known risk trait", scamClean:"✓ No match in built-in known scam trait library", scamKnown:"Known contract (whitelist)",
+    honeyPot:"Suspected honeypot trait", backdoor:"Suspected permission backdoor", bytecodeFeature:"Bytecode trait",
+    scamScore:"Risk Score", scamList:"Matched items", scamPerm:"Permission Audit", scamSummary:"Verdict"
+  }
+};
+let lang = (localStorage.getItem('hub_lang')||'zh');
+function t(k, vars){ let s = (T[lang]&&T[lang][k]!=null)? T[lang][k] : (T.zh[k]!=null? T.zh[k] : k);
+  if(vars) for(const [kk,vv] of Object.entries(vars)) s = s.replace('{'+kk+'}', vv); return s; }
+
+/* ===================== Chains & constants ===================== */
+const CHAINS = {
+  base:{ name:"Base", rpc:"https://mainnet.base.org", rpc2:"https://base-rpc.publicnode.com", usdc:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer:"https://api.basescan.org/api", scan:"https://basescan.org",
+         factory:"0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6", weth:"0x4200000000000000000000000000000000000006", router:"0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24" },
+  eth:{ name:"Ethereum", rpc:"https://eth.llamarpc.com", rpc2:"https://ethereum-rpc.publicnode.com", usdc:"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer:"https://api.etherscan.io/api", scan:"https://etherscan.io",
+        factory:"0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f", weth:"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", router:"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D" },
+  arb:{ name:"Arbitrum", rpc:"https://arb1.arbitrum.io/rpc", rpc2:"https://arbitrum-rpc.publicnode.com", usdc:"0xaf88d065e77c8cc2239327c5edb3a432268e5831", explorer:"https://api.arbiscan.io/api", scan:"https://arbiscan.io",
+        factory:"0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9", weth:"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", router:"0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24" },
+  bnb:{ name:"BNB Chain", rpc:"https://bsc-dataseed.bnbchain.org", rpc2:"https://bsc-dataseed1.bnbchain.org", usdc:"0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d", explorer:"https://api.bscscan.com/api", scan:"https://bscscan.com",
+        factory:"0xca143ce32fe78f1f7019d7d551a6402fc5350c73", weth:"0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", router:"0x10ED43C718714eb63d5aa57b78b54704E256024E" },
+  poly:{ name:"Polygon", rpc:"https://polygon-rpc.com", rpc2:"https://polygon-bor-rpc.publicnode.com", usdc:"0x3c499c542cEF5E3811e1192ce70d8cC03dE3C4a", explorer:"https://api.polygonscan.com/api", scan:"https://polygonscan.com",
+         factory:"0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C", weth:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", router:"0xedf6066a2b290C185783862c7F4776a2c8077ad1" }
+};
+const PAY_ADDR = "0x2409b47a530be3831158f10b08ac93f7d08c1ff2";
+const PRICE = { scan:0.05, apv:0.02, scam:0.03 };
+const CF_TOKEN = "e87dc5dd541b4f69bdd68580a7fee5c9";
+
+/* channel attribution ?src= */
+function getSrc(){
+  try{
+    const p = new URLSearchParams(location.search);
+    const s = (p.get('src')||'').trim().toLowerCase();
+    if(s){ localStorage.setItem('hub_src', s); return s; }
+    return localStorage.getItem('hub_src') || 'direct';
+  }catch(e){ return 'direct'; }
+}
+const SRC = getSrc();
+function trackEvent(action, extra){
+  if(!CF_TOKEN) return;
+  const beacon = { token: CF_TOKEN, events:{} };
+  beacon.events[action] = Object.assign({ src: SRC }, extra||{});
+  const s = document.createElement('script'); s.defer = true; s.src='https://static.cloudflareinsights.com/beacon.min.js';
+  s.setAttribute('data-cf-beacon', JSON.stringify(beacon)); document.head.appendChild(s);
+}
+if(CF_TOKEN){
+  const s=document.createElement('script'); s.defer=true; s.src='https://static.cloudflareinsights.com/beacon.min.js';
+  s.setAttribute('data-cf-beacon', JSON.stringify({token:CF_TOKEN})); document.head.appendChild(s);
+  trackEvent('visit', { src: SRC });
+}
+
+/* known contract / spender label maps (lowercase) */
+const KNOWN = {
+  "0x4200000000000000000000000000000000000006":"WETH (Base)","0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2":"WETH","0x82af49447d8a07e3bd95bd0d56f35241523fbab1":"WETH (Arbitrum)",
+  "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c":"WBNB","0x7ceb23fd6bc0add59e62ac25578270cff1b9f619":"WETH (Polygon)","0x0d500b1d8e8ef31e21c99d1db9a6444d39e9db61":"WMATIC",
+  "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913":"USDC (Base)","0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48":"USDC (Ethereum)","0xaf88d065e77c8cc2239327c5edb3a432268e5831":"USDC (Arbitrum)",
+  "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d":"USDC (BNB Chain)","0x3c499c542cef5e3811e1192ce70d8cc03de3c4a":"USDC (Polygon)","0x55d398326f99059ff775485246999027b3197955":"USDT (BNB Chain)",
+  "0xdac17f958d2ee523a2206206994597c13d831ec7":"USDT (Ethereum)","0x7a250d5630b4cf539739df2c5dacb4c659f2488d":"Uniswap V2 Router","0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24":"Uniswap V2 Router",
+  "0x10ed43c718714eb63d5aa57b78b54704e256024e":"PancakeSwap V2 Router","0xedf6066a2b290c185783862c7f4776a2c8077ad1":"Uniswap V2 Router (Polygon)",
+  "0x5c69bee701ef814a2b6a3edd4b1652cb9cc5a5a6f":"Uniswap V2 Factory","0x8909dc15e40173ff4699343b6eb8132c65e18e6c":"Uniswap V2 Factory (Base/BNB)",
+  "0xf1d7cc64fb4452f05c498126312ebe29f30fbcf9":"Uniswap V2 Factory (Arbitrum)","0xca143ce32fe78f1f7019d7d551a6402fc5350c73":"PancakeSwap V2 Factory",
+  "0x9e5a52f57b3038f1b8eee45f28b3c1967e22799c":"Uniswap V2 Factory (Polygon)","0x000000000000000000000000000000000000dead":"0xdead (burn address)","0x0000000000000000000000000000000000000000":"Zero address"
+};
+const KNOWN_SPENDER = {
+  "0x7a250d5630b4cf539739df2c5dacb4c659f2488d":"Uniswap V2 Router","0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24":"Uniswap V2 Router",
+  "0x10ed43c718714eb63d5aa57b78b54704e256024e":"PancakeSwap V2 Router","0xedf6066a2b290c185783862c7f4776a2c8077ad1":"Uniswap V2 Router (Polygon)",
+  "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45":"Uniswap V3 Router","0xe592427a0aece92de3edee1f18e0157c05861564":"Uniswap V3 Router",
+  "0x1111111254eeb25477b68fb85ed929f73a960582":"1inch V4 Router","0x1111111254ebb24875a8747cc88bc9d755bd2873":"1inch V5 Router",
+  "0xdef1c0ded9bec7f1a1670819833240f027b25e99":"0x Router","0x7f068ab3e2b094e64716d397a35b2f991d8d9861":"CoW Protocol GPv2","0x9008d19f58aabd9ed0d60971565aa8510560ab41":"CoW Protocol GPv2",
+  "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad":"Uniswap V3 / Universal Router","0x66a9893cc07d91d95644aedd05d03f95e1dba8af":"SushiSwap Router","0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f":"SushiSwap Router"
+};
+// Known high-risk / flagged addresses (illustrative; verify before acting). Users may extend.
+const FLAGGED = {};
+function knownLabel(addr){ return KNOWN[(addr||'').toLowerCase()] || null; }
+function spenderLabel(addr){ return KNOWN_SPENDER[(addr||'').toLowerCase()] || null; }
+function isFlagged(addr){ return !!FLAGGED[(addr||'').toLowerCase()]; }
+
+const ZERO = "0x0000000000000000000000000000000000000000";
+const DEAD = "0x000000000000000000000000000000000000dEaD".toLowerCase();
+const EIP1967 = "0x360894a4b9cbd36e2ce4073490c7a3b1f5bd7d6f5c8b8c2f3a3f3e3f3e3f3e3f";
+const MAX_UINT = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+const SEL = {
+  totalSupply:"0x18160ddd", decimals:"0x313ce567", symbol:"0x95d89b41", name:"0x06fdde03",
+  balanceOf:"0x70a08231", allowance:"0xdd62ed3e", owner:"0x8da5cb5b", getReserves:"0x0902f1ac",
+  getPair:"0xe6a43905", token0:"0x0dfe1681", paused:"0x5c975abb", approve:"0x095ea7b3"
+};
+const MINT_SEL = ["0x40c10f19","0x1249c58b"];
+const PAUSE_SEL = ["0x8456cb59","0x3f4ba83a"];
+const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+/* ===================== helpers ===================== */
+function toast(msg, ms=2600){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),ms); }
+function isAddr(a){ return /^0x[a-fA-F0-9]{40}$/.test(a); }
+function padAddr(a){ return "000000000000000000000000"+a.toLowerCase().replace(/^0x/,""); }
+function fmtUSDC(hex){ return (Number(BigInt(hex))/1e6).toFixed(6); }
+function hexToAscii(hex){ if(!hex||hex==='0x') return ''; let s=''; const h=hex.slice(2); for(let i=0;i+2<=h.length;i+=2){ const c=parseInt(h.substr(i,2),16); if(c===0) break; s+=String.fromCharCode(c); } return s; }
+async function rpc(chain, method, params){
+  const c = CHAINS[chain]; const endpoints=[c.rpc]; if(c.rpc2) endpoints.push(c.rpc2); let lastErr;
+  for(const url of endpoints){
+    try{ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
+      const j=await r.json(); if(j.error) throw new Error(j.error.message); return j.result;
+    }catch(e){ lastErr=e; }
+  } throw lastErr;
+}
+async function call(chain,to,data){ return await rpc(chain,'eth_call',[{to,data},'latest']); }
+async function callSilent(chain,to,data){ try{ return await call(chain,to,data); }catch(e){ return null; } }
+
+/* ===================== Tabs ===================== */
+let activeTab = 'scan';
+function switchTab(tab){
+  activeTab = tab;
+  ['scan','apv','scam'].forEach(k=>{
+    document.getElementById('panel'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('hidden', k!==tab);
+    document.getElementById('tab'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('active', k===tab);
+  });
+}
+
+/* ===================== Payment (shared) ===================== */
+function buildPaymentURI(tab){
+  const amt = Math.round(PRICE[tab]*1e6);
+  return `ethereum:${CHAINS.base.usdc}?functionName=transfer&address=${PAY_ADDR}&uint256=${amt}`;
+}
+function showQr(tab){
+  const box=document.getElementById(tab+'QrBox'); box.classList.toggle('hidden');
+  if(box.classList.contains('hidden')) return;
+  const uri=encodeURIComponent(buildPaymentURI(tab));
+  document.getElementById(tab+'QrImg').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uri}" width="200" height="200" alt="pay qr" />`;
+}
+function copyRecv(){
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(PAY_ADDR).then(()=>toast(t('addrCopied'))).catch(()=>fallbackCopy(PAY_ADDR));
+  else fallbackCopy(PAY_ADDR);
+}
+function fallbackCopy(text){ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); toast(t('addrCopied'));}catch(e){toast(text);} document.body.removeChild(ta); }
+async function pollPaid(tab){
+  const h=prompt("Paste your USDC transfer transaction hash (0x...):","");
+  if(!h||!/^0x[a-fA-F0-9]{64}$/.test(h.trim())){ toast(t('errAddr')); return; }
+  const ok=await verifyPayment(h.trim());
+  if(ok) unlockPremium(tab); else toast(t('payFail'));
+}
+async function startPayment(tab){
+  if(!window.ethereum){ toast(t('walletMissing')); return; }
+  let accounts; try{ accounts=await window.ethereum.request({method:'eth_requestAccounts'}); }catch(e){ toast(t('walletDeny')); return; }
+  const from=accounts[0]; let cur; try{ cur=await window.ethereum.request({method:'eth_chainId'}); }catch(e){}
+  if(cur&&cur!=='0x2105'){ try{ await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:'0x2105'}]}); }catch(e){ toast(t('chainSwitch')); return; } }
+  const amt=Math.round(PRICE[tab]*1e6);
+  const data="0xa9059cbb"+PAY_ADDR.toLowerCase().replace(/^0x/,'')+amt.toString(16).padStart(64,'0');
+  const btn=document.getElementById(tab+'PayBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('paySubmit');
+  let txHash; try{ txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from,to:CHAINS.base.usdc,data,gas:'0x493e0'}]}); }
+  catch(e){ btn.disabled=false; btn.innerHTML=t('payBtn'+(tab==='scan'?'S':tab==='apv'?'A':'X')); toast(t('payCancel')+e.message); return; }
+  toast(t('paySubmit'),3200);
+  const ok=await verifyPayment(txHash);
+  if(ok) unlockPremium(tab); else { btn.disabled=false; btn.innerHTML=t('payBtn'+(tab==='scan'?'S':tab==='apv'?'A':'X')); toast(t('payFail')); }
+}
+async function verifyPayment(txHash){
+  const toPadded="0x000000000000000000000000"+PAY_ADDR.slice(2).toLowerCase();
+  const usdc=CHAINS.base.usdc.toLowerCase();
+  const need=PRICE[activeTab]||0.02;
+  for(let i=0;i<12;i++){
+    try{
+      const r=await rpc('base','eth_getTransactionReceipt',[txHash]);
+      if(r&&Array.isArray(r.logs)){
+        for(const log of r.logs){
+          if(log.address&&log.address.toLowerCase()===usdc&&log.topics&&log.topics[0]===TRANSFER_TOPIC&&log.topics[2]&&log.topics[2].toLowerCase()===toPadded){
+            const raw=log.data&&log.data!=='0x'?log.data:(log.topics[3]||'0x0');
+            const amt=Number(BigInt(raw))/1e6;
+            if(amt>=need-1e-9) return true;
+          }
+        }
+      }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r,4000));
+  }
+  return false;
+}
+function unlockPremium(tab){
+  document.getElementById(tab+'GateCard').classList.add('hidden');
+  document.getElementById(tab+'PremiumCard').classList.remove('hidden');
+  if(tab==='scan') renderScanPremium();
+  else if(tab==='apv') renderRevoke();
+  else if(tab==='scam') renderScamPremium();
+  toast(t('unlocked'));
+  trackEvent('premium_paid',{src:SRC,module:tab,amount:PRICE[tab]});
+}
+
+/* ===================== TAB 1: Address Scan ===================== */
+let scanData=null, scanPremium=null;
+async function runScan(){
+  const addr=document.getElementById('scanAddr').value.trim();
+  const chain=document.getElementById('scanChain').value;
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('scanBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('scanning');
+  try{
+    const c=CHAINS[chain];
+    const code=await rpc(chain,'eth_getCode',[addr,'latest']);
+    const isContract=code&&code!=='0x'&&code.length>3;
+    const balHex=await rpc(chain,'eth_getBalance',[addr,'latest']);
+    const nativeBal=Number(BigInt(balHex))/1e18;
+    let usdcBal=null; try{ const u=await call(chain,c.usdc,SEL.balanceOf+padAddr(addr)); usdcBal=fmtUSDC(u); }catch(e){}
+    let firstTx=null,txCount=null;
+    try{ const fr=await fetch(`${c.explorer}?module=account&action=txlist&address=${addr}&page=1&offset=1&sort=asc`); const fj=await fr.json();
+      if(fj.status==='1'&&fj.result.length){ firstTx=fj.result[0].timeStamp; txCount=fj.result.length; } }catch(e){}
+    let token=null;
+    const sym=await callSilent(chain,addr,SEL.symbol), dec=await callSilent(chain,addr,SEL.decimals), ts=await callSilent(chain,addr,SEL.totalSupply);
+    if(sym!=null&&dec!=null&&ts!=null){
+      let nm=null; try{ const nr=await call(chain,addr,SEL.name); nm=hexToAscii(nr); }catch(e){}
+      let sy=null; try{ const sr=await call(chain,addr,SEL.symbol); sy=hexToAscii(sr); }catch(e){}
+      token={name:nm||t('na'),symbol:sy||t('na'),decimals:dec?Number(BigInt(dec)):null,rawSupply:ts,totalSupply:ts?(Number(BigInt(ts))/Math.pow(10,dec?Number(BigInt(dec)):18)).toLocaleString():t('na')};
+    }
+    scanData={addr,chain,isContract,nativeBal,usdcBal,firstTx,txCount,token,ts:Date.now()};
+    scanPremium=null;
+    renderScanFree(scanData);
+    document.getElementById('scanResult').classList.remove('hidden');
+    document.getElementById('scanGateCard').classList.remove('hidden');
+    document.getElementById('scanPremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled=false; btn.textContent=t('scanBtn'); }
+}
+function renderScanFree(s){
+  const flags=[]; let ageTxt=s.firstTx?new Date(s.firstTx*1000).toLocaleDateString():t('unknown'); let html='';
+  if(s.token){
+    html+=`<p class="section-title">${t('tokenMeta')}</p>`;
+    const rows=[[t('name'),s.token.name||t('na')],[t('symbol'),s.token.symbol||t('na')],[t('decimals'),s.token.decimals!=null?s.token.decimals:t('na')],[t('totalSupply'),s.token.totalSupply]];
+    html+=rows.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  } else {
+    const rows=[[t('type'),s.isContract?t('contract'):t('eoa')],[t('nativeBal'),s.nativeBal.toFixed(6)+" "+CHAINS[s.chain].name],[t('usdcBal'),s.usdcBal!=null?s.usdcBal+" USDC":t('na')],[t('firstTx'),ageTxt],[t('txCount'),s.txCount!=null?s.txCount:t('na')]];
+    html+=rows.map(([k,v])=>`<div class="kv"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+  }
+  document.getElementById('scanFreeBody').innerHTML=html;
+  const lbl=knownLabel(s.addr);
+  if(lbl) flags.push(["good",t('knownContract')+": "+lbl]);
+  if(s.token) flags.push(["good",t('f_goodToken')]);
+  if(!s.firstTx) flags.push(["warn",t('f_unknown')]);
+  if(s.isContract&&!s.firstTx) flags.push(["bad",t('f_contractNoTx')]);
+  if(!s.token) flags.push(["good",t('f_goodAddr')]);
+  document.getElementById('scanFreeFlags').innerHTML=flags.map(([ty,txt])=>`<span class="flag f-${ty}">${ty==='good'?'✓ ':''}${txt}</span>`).join('');
+}
+async function multiScan(){
+  const addr=document.getElementById('scanAddr').value.trim();
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('mcBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('scanning');
+  const rows=[];
+  try{
+    for(const [ck,c] of Object.entries(CHAINS)){
+      const cell={chain:c.name,type:'–',native:'–',usdc:'–'};
+      try{ const code=await rpc(ck,'eth_getCode',[addr,'latest']); cell.type=(code&&code!=='0x'&&code.length>3)?t('contract'):t('eoa'); }catch(e){}
+      try{ const b=await rpc(ck,'eth_getBalance',[addr,'latest']); cell.native=(Number(BigInt(b))/1e18).toFixed(4); }catch(e){}
+      try{ const u=await call(ck,c.usdc,SEL.balanceOf+padAddr(addr)); cell.usdc=fmtUSDC(u); }catch(e){}
+      rows.push(cell);
+    }
+  }finally{ btn.disabled=false; btn.textContent=t('mcBtn'); }
+  let html=`<p class="section-title">${t('mcTitle')}</p><table class="chain-tbl"><tr><th>${t('chainLabel')}</th><th>${t('type')}</th><th>${t('nativeBal')}</th><th>USDC</th></tr>`+
+    rows.map(r=>`<tr><td>${r.chain}</td><td>${r.type}</td><td>${r.native}</td><td>${r.usdc}</td></tr>`).join('')+`</table>`;
+  document.getElementById('mcBody').innerHTML=html;
+  document.getElementById('mcCard').classList.remove('hidden');
+}
+function shareLink(tab){
+  const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr'}[tab];
+  const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain'}[tab];
+  const addr=document.getElementById(idMap).value.trim();
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const chain=document.getElementById(chainMap).value;
+  const url=location.origin+location.pathname+'?tab='+tab+'&addr='+addr+'&chain='+chain;
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>toast(t('shareCopied'))).catch(()=>fallbackCopy(url));
+  else fallbackCopy(url);
+}
+
+/* scan premium compute (reuse SafeScan logic) */
+async function renderScanPremium(){
+  const s=scanData;
+  document.getElementById('scanPremiumBody').innerHTML='<div class="muted" style="text-align:center;padding:18px">'+t('recode')+'</div>';
+  const reasons=[]; let score=5,addrScore=5,permScore=100,liqScore=100;
+  if(!s.firstTx){ score+=45; addrScore+=45; reasons.push(["bad",t('f_noTx')]); }
+  else{ const ageDays=(Date.now()/1000-s.firstTx)/86400; if(ageDays<7){ score+=20; addrScore+=20; reasons.push(["warn",t('r_newAcct')]); } else reasons.push(["good",t('r_ageDays',{n:Math.floor(ageDays)})]); }
+  if(s.isContract&&!s.firstTx){ score+=30; addrScore+=30; }
+  if(s.txCount!=null&&s.txCount<3&&s.isContract){ score+=15; addrScore+=15; reasons.push(["warn",t('r_lowTx')]); }
+  let perm=null,liq=null,holders=null;
+  if(s.token){
+    perm=await auditPermissions(s.chain,s.addr);
+    liq=await auditLiquidity(s.chain,s.addr);
+    if(perm){
+      if(perm.renounced===false){ score+=10; permScore-=20; reasons.push(["warn",t('ownerPresent')]); }
+      else if(perm.renounced===true){ reasons.push(["good",t('r_ownerRenounced')]); }
+      if(perm.proxy){ score+=25; permScore-=45; reasons.push(["bad",t('r_proxy')]); }
+      if(perm.mint){ score+=20; permScore-=35; reasons.push(["bad",t('r_mint')]); }
+      if(perm.pause){ score+=10; permScore-=20; reasons.push(["warn",t('r_pause')]); }
+      if(perm.routerApprove){ score+=5; permScore-=10; reasons.push(["warn",t('r_routerApprove')]); }
+    }
+    if(liq){
+      if(liq.verdict==='locked') reasons.push(["good",t('r_lpBurned',{p:liq.burnedPct.toFixed(1)})]);
+      else if(liq.verdict==='partial'){ liqScore-=15; reasons.push(["warn",t('r_lpPartial',{p:liq.burnedPct.toFixed(1)})]); }
+      else if(liq.verdict==='ownerCtrl'){ score+=20; liqScore-=60; reasons.push(["bad",t('r_lpOwnerCtrl')]); }
+      else if(liq.verdict==='circulating'){ score+=10; liqScore-=30; reasons.push(["warn",t('r_lpCirculating')]); }
+      else if(liq.verdict==='none'){ liqScore-=15; reasons.push(["warn",t('r_lpNoPair')]); }
+    }
+    try{ const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),8000);
+      const h=await fetch(`${CHAINS[s.chain].explorer}?module=token&action=tokenholderlist&contractaddress=${s.addr}&page=1&offset=10`,{signal:ctl.signal}); clearTimeout(to);
+      const hj=await h.json();
+      if(hj.status==='1'&&Array.isArray(hj.result)&&hj.result.length){ const totalRaw=s.token.rawSupply?BigInt(s.token.rawSupply):0n; const totalSafe=(totalRaw>0n)?totalRaw:null;
+        holders={top:hj.result.slice(0,10).map(r=>({addr:r.holderAddress,pct:totalSafe?Number(BigInt(r.holderBalance)*10000n/totalSafe)/100:null}))};
+        if(totalSafe) holders.top1Pct=holders.top[0].pct; } }catch(e){}
+  }
+  addrScore=Math.max(5,Math.min(100,addrScore));
+  permScore=s.token?Math.max(5,Math.min(100,permScore)):null;
+  liqScore=s.token?Math.max(5,Math.min(100,liqScore)):null;
+  score=Math.max(5,Math.min(100,score));
+  const label=score>=70?t('l_high'):score>=40?t('l_mid'):t('l_low');
+  scanPremium={score,label,reasons,perm,liq,holders,sub:{addrScore,permScore,liqScore},s,ts:Date.now()};
+  renderScanPremiumBody(scanPremium);
+}
+async function auditPermissions(chain,token){
+  const out={renounced:null,proxy:false,mint:false,pause:false,routerApprove:false,owner:null};
+  let bc=null; try{ bc=await rpc(chain,'eth_getCode',[token,'latest']); }catch(e){}
+  if(bc&&bc.length>3){ out.mint=MINT_SEL.some(s=>bc.toLowerCase().includes(s)); out.pause=PAUSE_SEL.some(s=>bc.toLowerCase().includes(s));
+    try{ const slot=await rpc(chain,'eth_getStorageAt',[token,EIP1967,'latest']); if(slot&&slot!=='0x'+'0'.repeat(64)&&BigInt(slot)!==0n) out.proxy=true; }catch(e){} }
+  const ow=await callSilent(chain,token,SEL.owner);
+  if(ow&&ow.length===66){ const o="0x"+ow.slice(-40).toLowerCase(); out.owner=o;
+    if(o===ZERO||o===DEAD) out.renounced=true; else { out.renounced=false; const router=CHAINS[chain].router; if(router){ const al=await callSilent(chain,token,SEL.allowance+padAddr(o)+padAddr(router)); if(al&&BigInt(al)>0n) out.routerApprove=true; } } }
+  return out;
+}
+async function auditLiquidity(chain,token){
+  const c=CHAINS[chain]; if(!c.factory) return {verdict:'none'};
+  let pair; try{ const r=await call(chain,c.factory,SEL.getPair+padAddr(token)+padAddr(c.weth)); pair="0x"+r.slice(-40); }catch(e){ return {verdict:'none'}; }
+  if(!/^0x[0-9a-fA-F]{40}$/.test(pair)||pair===ZERO) return {verdict:'none'};
+  try{ const tsHex=await call(chain,pair,SEL.totalSupply); const total=BigInt(tsHex); if(total===0n) return {verdict:'none'};
+    const burnedHex=await call(chain,pair,SEL.balanceOf+padAddr(DEAD)); const burned=BigInt(burnedHex); const burnedPct=Number(burned*10000n/total)/100;
+    let ownerPct=0; if(scanPremium&&scanPremium.perm&&scanPremium.perm.owner&&scanPremium.perm.renounced===false){ const o=scanPremium.perm.owner; const oh=await callSilent(chain,pair,SEL.balanceOf+padAddr(o)); if(oh) ownerPct=Number(BigInt(oh)*10000n/total)/100; }
+    let wethReserve=null,tokenReserve=null;
+    try{ const rs=await call(chain,pair,SEL.getReserves); const t0=await call(chain,pair,SEL.token0); const r0=BigInt("0x"+rs.slice(2,66)); const r1=BigInt("0x"+rs.slice(66,130));
+      const isT0weth=("0x"+t0.slice(-40)).toLowerCase()===c.weth.toLowerCase(); if(isT0weth){ wethReserve=r0; tokenReserve=r1; } else { wethReserve=r1; tokenReserve=r0; } }catch(e){}
+    let verdict; if(burnedPct>=95) verdict='locked'; else if(burnedPct>0) verdict='partial'; else if(ownerPct>20) verdict='ownerCtrl'; else verdict='circulating';
+    const wethNum=wethReserve!=null?Number(wethReserve)/1e18:null; let priceWeth=null,tvlWeth=null;
+    if(wethNum!=null){ tvlWeth=2*wethNum; if(tokenReserve!=null){ const dec=(scanData.token&&scanData.token.decimals!=null)?scanData.token.decimals:18; const tokenAmt=Number(tokenReserve)/Math.pow(10,dec); if(tokenAmt>0) priceWeth=wethNum/tokenAmt; } }
+    return {verdict,pair,burnedPct,ownerPct,wethReserve:wethNum!=null?wethNum.toFixed(4):null,priceWeth:priceWeth!=null?priceWeth.toPrecision(6):null,tvlWeth:tvlWeth!=null?tvlWeth.toFixed(2):null,totalLP:total.toString()};
+  }catch(e){ return {verdict:'none'}; }
+}
+function renderScanPremiumBody(d){
+  const s=d.s;
+  document.getElementById('scanRiskScore').textContent=d.score;
+  document.getElementById('scanRiskScore').style.color=d.score>=70?'var(--bad)':d.score>=40?'var(--warn)':'var(--good)';
+  document.getElementById('scanRiskLabel').textContent=d.label+" · "+t('scoreSub');
+  let html=''; const sub=d.sub||{}; const barColor=d.score>=70?'var(--bad)':d.score>=40?'var(--warn)':'var(--good)';
+  html+=`<div class="scorebar"><div class="scorebar-fill" style="width:${d.score}%;background:${barColor}"></div></div>`;
+  html+=`<p class="section-title" style="margin-top:8px">${t('scoreBreakdown')}</p>`;
+  const subs=[[t('subAddr'),sub.addrScore],sub.permScore!=null?[t('subPerm'),sub.permScore]:null,sub.liqScore!=null?[t('subLiq'),sub.liqScore]:null].filter(Boolean);
+  html+=subs.map(([k,v])=>`<div class="subscore"><span>${k}</span><b>${v}</b></div>`).join('');
+  if(d.perm){ const p=d.perm; const items=[[t('owner'),p.renounced===true?`<span class="f-good flag">${t('ownerRenounced')}</span>`:p.renounced===false?`<span class="f-bad flag">${t('ownerPresent')}</span>`:t('noOwner')],
+    [t('proxy'),p.proxy?`<span class="f-bad flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`],[t('mint'),p.mint?`<span class="f-bad flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`],[t('pause'),p.pause?`<span class="f-warn flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`]];
+    html+=`<p class="section-title" style="margin-top:14px">${t('permAudit')}</p><div class="audit-grid">`+items.map(([k,v])=>`<div class="audit-item"><div class="a-k">${k}</div><div class="a-v">${v}</div></div>`).join('')+`</div>`; }
+    if(d.liq&&d.liq.verdict!=='none'){ const L=d.liq; const vColor=L.verdict==='locked'?'var(--good)':(L.verdict==='ownerCtrl'?'var(--bad)':'var(--warn)'); const vText={locked:t('locked'),partial:t('partial'),ownerCtrl:t('ownerCtrl'),circulating:t('circulating')}[L.verdict];
+    const rows=[[t('lpBurned'),L.burnedPct.toFixed(2)+"%"], [t('lpOwner'),L.ownerPct.toFixed(2)+"%"], [t('lpReserve'),L.wethReserve!=null?L.wethReserve+" WETH":t('na')], [t('priceWeth'),L.priceWeth!=null?L.priceWeth+" WETH":t('na')], [t('tvlWeth'),L.tvlWeth!=null?L.tvlWeth+" WETH":t('na')]];
+    html+=`<p class="section-title" style="margin-top:16px">${t('liquidity')}</p><div class="audit-grid">`+rows.map(([k,v])=>`<div class="audit-item"><div class="a-k">${k}</div><div class="a-v">${v}</div></div>`).join('')+`</div><div class="verdict" style="background:${vColor}22;color:${vColor}">${t('verdict')}: ${vText}</div>`;
+  } else if(d.liq&&d.liq.verdict==='none'){ html+=`<p class="section-title" style="margin-top:16px">${t('liquidity')}</p><div class="muted">${t('pairNone')}</div>`; }
+  if(d.holders){ const H=d.holders; html+=`<p class="section-title" style="margin-top:16px">${t('holderConc')}</p>`; if(H.top1Pct!=null) html+=`<div class="kv"><span class="k">${t('top1Pct')}</span><span class="v">${H.top1Pct}%</span></div>`; html+=`<div style="margin-top:6px">`+H.top.slice(0,6).map((x,i)=>`<div class="holder-row"><span>${i+1}. ${x.addr.slice(0,10)}…${x.addr.slice(-8)}</span><span>${x.pct!=null?x.pct+"%":"—"}</span></div>`).join('')+`</div>`; }
+  else if(s.token){ html+=`<p class="section-title" style="margin-top:16px">${t('holderConc')}</p><div class="muted">${t('holdersUnavail')}</div>`; }
+  html+=`<p class="section-title" style="margin-top:16px">${t('findings')}</p>`+d.reasons.map(([ty,txt])=>`<span class="flag f-${ty}">${txt}</span>`).join(' ')+`<div class="note" style="margin-top:12px">${t('disclaimer')}</div>`;
+  document.getElementById('scanPremiumBody').innerHTML=html;
+  window._lastScanReport=buildScanReport(d);
+}
+function buildScanReport(d){ const s=d.s; return {address:s.addr,chain:CHAINS[s.chain].name,isToken:!!s.token,score:d.score,label:d.label,generatedAt:new Date().toISOString(),payTo:PAY_ADDR,token:s.token,permissionAudit:d.perm,liquidityLock:d.liq,holders:d.holders,scoreBreakdown:d.sub,reasons:d.reasons.map(r=>r[1]),disclaimer:t('disclaimer')}; }
+function exportReport(tab){
+  if(tab==='scan'&&!window._lastScanReport){ toast(t('exportNeed')); return; }
+  if(tab==='scam'&&!window._lastScamReport){ toast(t('exportNeed')); return; }
+  const data=tab==='scan'?window._lastScanReport:window._lastScamReport;
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(tab==='scan'?'safescan':'scam')+'-report.json'; a.click();
+}
+
+/* ===================== TAB 2: Approval Guard ===================== */
+let apvData=null, approvals=[];
+async function runApv(){
+  const addr=document.getElementById('apvAddr').value.trim();
+  const chain=document.getElementById('apvChain').value;
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('apvBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('apvScanning');
+  try{
+    approvals=[]; let highRisk=0,infCount=0;
+    const list=await fetchApprovals(chain,addr);
+    for(const a of list){
+      const amt=a.value; const isInf=amt>=MAX_UINT||amt.toString()==="115792089237316195423570985008687907853269984665640564039457584007913129639935";
+      const lbl=spenderLabel(a.spender); const flagged=isFlagged(a.spender);
+      let risk='low'; if(flagged) risk='high'; else if(isInf) risk='high'; else if(!lbl) risk='mid';
+      if(risk==='high') highRisk++; if(isInf) infCount++;
+      approvals.push({token:a.token,tokenSymbol:a.tokenSymbol,tokenDecimals:a.tokenDecimals,spender:a.spender,spenderLabel:lbl,flagged,isInf,amount:amt,amountTxt:isInf?t('infinite'):(Number(amt)/Math.pow(10,a.tokenDecimals||18)).toLocaleString(undefined,{maximumFractionDigits:4}),risk});
+    }
+    approvals.sort((x,y)=>(x.risk==='high'?0:1)-(y.risk==='high'?0:1));
+    apvData={addr,chain,total:approvals.length,highRisk,infCount,ts:Date.now()};
+    renderApvFree();
+    document.getElementById('apvResult').classList.remove('hidden');
+    document.getElementById('apvGateCard').classList.remove('hidden');
+    document.getElementById('apvPremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled=false; btn.textContent=t('apvBtn'); }
+}
+async function fetchApprovals(chain,owner){
+  const out=[]; const topicOwner="0x000000000000000000000000"+owner.toLowerCase().replace(/^0x/,'');
+  const fromBlock=(chain==='base')?"0x1":"0x1000000";
+  try{ const logs=await rpc(chain,'eth_getLogs',[{topics:["0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",topicOwner],fromBlock,toBlock:"latest"}]);
+    if(Array.isArray(logs)){ for(const log of logs){ const spender="0x"+(log.topics[2]||'').slice(-40); const token=(log.address||'').toLowerCase(); const value=log.data&&log.data!=='0x'?BigInt(log.data):0n; if(value===0n) continue; const meta=await tokenMeta(chain,token); out.push({token,spender,value,tokenSymbol:meta.symbol,tokenDecimals:meta.decimals}); } } }catch(e){}
+  const map=new Map(); for(const a of out){ const k=a.token+":"+a.spender; if(!map.has(k)||a.value>map.get(k).value) map.set(k,a); }
+  return [...map.values()];
+}
+async function tokenMeta(chain,token){ try{ const sym=await callSilent(chain,token,"0x95d89b41"); const dec=await callSilent(chain,token,"0x313ce567"); return {symbol:sym?hexToAscii(sym):token.slice(0,8),decimals:dec?Number(BigInt(dec)):18}; }catch(e){ return {symbol:token.slice(0,8),decimals:18}; } }
+function renderApvFree(){
+  const s=apvData;
+  let html=`<div class="summary-pill"><div class="n">${s.total}</div><div class="l">${t('totalApv')}</div></div>`+
+    `<div class="summary-pill"><div class="n" style="color:var(--bad)">${s.highRisk}</div><div class="l">${t('highRisk')}</div></div>`+
+    `<div class="summary-pill"><div class="n" style="color:var(--warn)">${s.infCount}</div><div class="l">${t('infApv')}</div></div>`;
+  document.getElementById('apvSummary').innerHTML=html;
+  if(s.total===0){ document.getElementById('apvFreeBody').innerHTML=`<div class="muted" style="text-align:center;padding:18px">${t('noApprovals')}</div>`; document.getElementById('apvGateCard').classList.add('hidden'); return; }
+  let rows='';
+  for(const a of approvals){
+    const badgeClass=a.risk==='high'?'b-high':a.risk==='mid'?'b-mid':'b-low';
+    const badgeTxt=a.risk==='high'?t('highRisk'):a.risk==='mid'?t('unknownSpender'):t('knownSpender');
+    const lbl=a.spenderLabel?`<span class="flag f-good">${a.spenderLabel}</span>`:(a.flagged?`<span class="f-bad flag">⚠ ${t('rKnownRisk')}</span>`:`<span class="f-warn flag">${t('unknownSpender')}</span>`);
+    rows+=`<div class="apv-row"><div class="apv-head"><span class="apv-token">${a.tokenSymbol||a.token.slice(0,10)}</span><span class="apv-badge ${badgeClass}">${badgeTxt}</span></div><div class="apv-spender">${a.spender}</div><div class="apv-amt">${t('amount')}: <span class="${a.isInf?'infinite':''}">${a.amountTxt}</span> ${lbl}</div></div>`;
+  }
+  document.getElementById('apvFreeBody').innerHTML=rows;
+}
+function buildRevokeData(token,spender){ return SEL.approve+spender.toLowerCase().replace(/^0x/,'')+"0".padStart(64,'0'); }
+function buildRevokeURI(token,spender){ return `ethereum:${token}?functionName=approve&address=${spender}&uint256=0`; }
+function renderRevoke(){
+  const revokable=approvals.filter(a=>a.risk==='high'||a.risk==='mid');
+  let html='';
+  if(revokable.length===0){ html=`<div class="muted" style="text-align:center;padding:18px">${t('allClean')}</div>`; document.getElementById('apvPremiumBody').innerHTML=html; return; }
+  html+=`<div class="note" style="margin-bottom:10px">${t('revokeFor')}</div>`; let i=0;
+  for(const a of revokable){ const data=buildRevokeData(a.token,a.spender); const uri=buildRevokeURI(a.token,a.spender); const id="tx_"+i++;
+    html+=`<div class="apv-row"><div class="apv-head"><span class="apv-token">${a.tokenSymbol||a.token.slice(0,10)} → ${a.spenderLabel||a.spender.slice(0,10)+'…'}</span></div><div class="apv-amt">${t('risk')}: <span class="flag ${a.risk==='high'?'f-bad':'f-warn'}">${a.risk==='high'?t('highRisk'):t('unknownSpender')}</span></div><div class="result-box" id="${id}">${data}</div><div class="toolbar"><button onclick="copyText('${data}')">${t('copyTx')}</button><button onclick="window.open('${uri}','_blank')">${t('scanTx')}</button></div></div>`;
+  }
+  html+=`<div class="note">${t('walletNote')}</div>`;
+  document.getElementById('apvPremiumBody').innerHTML=html;
+}
+function copyText(txt){ if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(()=>toast(t('addrCopied'))).catch(()=>fallbackCopy(txt)); else fallbackCopy(txt); }
+function exportRevokeList(){ const revokable=approvals.filter(a=>a.risk==='high'||a.risk==='mid'); if(revokable.length===0){ toast(t('allClean')); return; }
+  const data=revokable.map(a=>({token:a.token,tokenSymbol:a.tokenSymbol,spender:a.spender,spenderLabel:a.spenderLabel||null,risk:a.risk,revokeTxData:buildRevokeData(a.token,a.spender),revokeURI:buildRevokeURI(a.token,a.spender)}));
+  const blob=new Blob([JSON.stringify({generatedAt:new Date().toISOString(),payTo:PAY_ADDR,revokes:data},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="approvalguard-revokes.json"; a.click(); }
+
+/* ===================== TAB 3: Contract Blacklist ===================== */
+let scamData=null, scamPremium=null;
+async function runScam(){
+  const addr=document.getElementById('scamAddr').value.trim();
+  const chain=document.getElementById('scamChain').value;
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('scamBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('scamScanning');
+  try{
+    const lbl=knownLabel(addr); const flagged=isFlagged(addr);
+    let bc=null; try{ bc=await rpc(chain,'eth_getCode',[addr,'latest']); }catch(e){}
+    const isContract=bc&&bc!=='0x'&&bc.length>3;
+    // permission traits
+    const perm=await auditPermissions(chain,addr);
+    // honeyPot-ish bytecode traits: presence of both mint & pause + non-renounced owner = classic trap pattern (heuristic)
+    const traits=[];
+    if(flagged) traits.push(["bad",t('scamHit')]);
+    if(lbl) traits.push(["good",t('scamKnown')]);
+    if(perm.proxy) traits.push(["bad",t('backdoor')+" · "+t('proxy')]);
+    if(perm.mint&&perm.pause&&perm.renounced===false) traits.push(["warn",t('honeyPot')]);
+    if(perm.renounced===false&&!lbl) traits.push(["warn",t('ownerPresent')]);
+    if(!isContract) traits.push(["warn",t('notToken')]);
+    if(traits.length===0) traits.push(["good",t('scamClean')]);
+    scamData={addr,chain,isContract,perm,flagged,known:!!lbl,traits,ts:Date.now()};
+    renderScamFree(scamData);
+    document.getElementById('scamResult').classList.remove('hidden');
+    document.getElementById('scamGateCard').classList.remove('hidden');
+    document.getElementById('scamPremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled=false; btn.textContent=t('scamBtn'); }
+}
+function renderScamFree(d){
+  let html=`<div class="kv"><span class="k">${t('type')}</span><span class="v">${d.isContract?t('contract'):t('eoa')}</span></div>`;
+  html+=`<div class="kv"><span class="k">${t('owner')}</span><span class="v">${d.perm&&d.perm.owner?d.perm.owner:t('na')}</span></div>`;
+  document.getElementById('scamFreeBody').innerHTML=html;
+  document.getElementById('scamFreeBody').innerHTML+=d.traits.map(([ty,txt])=>`<span class="flag f-${ty}">${ty==='good'?'✓ ':''}${txt}</span>`).join(' ');
+}
+async function renderScamPremium(){
+  const d=scamData;
+  document.getElementById('scamPremiumBody').innerHTML='<div class="muted" style="text-align:center;padding:18px">'+t('recode')+'</div>';
+  const reasons=[]; let score=10;
+  if(d.perm){ if(d.perm.proxy){ score+=35; reasons.push(["bad",t('r_proxy')]); } if(d.perm.mint){ score+=20; reasons.push(["bad",t('r_mint')]); } if(d.perm.pause){ score+=10; reasons.push(["warn",t('r_pause')]); } if(d.perm.renounced===false){ score+=10; reasons.push(["warn",t('ownerPresent')]); } else if(d.perm.renounced===true){ reasons.push(["good",t('r_ownerRenounced')]); } if(d.flagged){ score+=40; reasons.push(["bad",t('scamHit')]); } }
+  if(d.known){ score=Math.max(5,score-40); reasons.push(["good",t('scamKnown')]); }
+  score=Math.max(5,Math.min(100,score));
+  const label=score>=70?t('l_high'):score>=40?t('l_mid'):t('l_low');
+  scamPremium={score,label,reasons,perm:d.perm,ts:Date.now()};
+  const p=d.perm; const items=[[t('owner'),p.renounced===true?`<span class="f-good flag">${t('ownerRenounced')}</span>`:p.renounced===false?`<span class="f-bad flag">${t('ownerPresent')}</span>`:t('noOwner')],
+    [t('proxy'),p.proxy?`<span class="f-bad flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`],[t('mint'),p.mint?`<span class="f-bad flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`],[t('pause'),p.pause?`<span class="f-warn flag">${t('yes')}</span>`:`<span class="f-good flag">${t('no')}</span>`]];
+  let html=`<div class="score" style="color:${score>=70?'var(--bad)':score>=40?'var(--warn)':'var(--good)'}">${score}</div><div class="score-sub">${label} · ${t('scoreSub')}</div>`;
+  html+=`<p class="section-title" style="margin-top:14px">${t('scamPerm')}</p><div class="audit-grid">`+items.map(([k,v])=>`<div class="audit-item"><div class="a-k">${k}</div><div class="a-v">${v}</div></div>`).join('')+`</div>`;
+  html+=`<p class="section-title" style="margin-top:16px">${t('scamList')}</p>`+d.traits.map(([ty,txt])=>`<span class="flag f-${ty}">${txt}</span>`).join(' ');
+  html+=`<p class="section-title" style="margin-top:16px">${t('findings')}</p>`+reasons.map(([ty,txt])=>`<span class="flag f-${ty}">${txt}</span>`).join(' ');
+  html+=`<div class="note" style="margin-top:12px">${t('disclaimer')}</div>`;
+  document.getElementById('scamPremiumBody').innerHTML=html;
+  window._lastScamReport={address:d.addr,chain:CHAINS[d.chain].name,score,label,generatedAt:new Date().toISOString(),payTo:PAY_ADDR,permissionAudit:p,traits:d.traits.map(r=>r[1]),reasons:reasons.map(r=>r[1]),disclaimer:t('disclaimer')};
+}
+
+/* ===================== init ===================== */
+function setLang(l){ lang=l; localStorage.setItem('hub_lang',l); document.documentElement.lang=(l==='zh'?'zh-CN':'en');
+  document.getElementById('langZh').classList.toggle('active',l==='zh'); document.getElementById('langEn').classList.toggle('active',l==='en');
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=t(el.getAttribute('data-i18n')); });
+  if(scanData) renderScanFree(scanData); if(scanPremium) renderScanPremiumBody(scanPremium);
+  if(apvData) renderApvFree(); if(approvals.some(a=>a.risk!=='low')) renderRevoke();
+  if(scamData) renderScamFree(scamData); if(scamPremium) renderScamPremium();
+}
+setLang(lang);
+(function(){ try{ const p=new URLSearchParams(location.search); const tab=p.get('tab'); const a=p.get('addr'); const c=p.get('chain');
+  if(tab&&['scan','apv','scam'].includes(tab)) switchTab(tab);
+  if(a&&isAddr(a)){ const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr'}[activeTab]; const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain'}[activeTab];
+    document.getElementById(idMap).value=a; if(c&&CHAINS[c]) document.getElementById(chainMap).value=c;
+    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else runScam(); },50); } }catch(e){} })();
+</script>
+</body>
+</html>
