@@ -111,6 +111,7 @@
     <div class="tab" id="tabScam" onclick="switchTab('scam')">⚫ <span data-i18n="t_scam">合约黑名单</span><small data-i18n="t_scam_s">黑名单查询 · $0.03</small></div>
     <div class="tab" id="tabGas" onclick="switchTab('gas')">⛽ <span data-i18n="t_gas">Gas 估算</span><small data-i18n="t_gas_s">免费 · 交易预审</small></div>
     <div class="tab" id="tabSim" onclick="switchTab('sim')">🔬 <span data-i18n="t_sim">合约比对</span><small data-i18n="t_sim_s">相似性 · $0.04</small></div>
+    <div class="tab" id="tabSimulate" onclick="switchTab('simulate')">🎯 <span data-i18n="t_simulate">交易模拟</span><small data-i18n="t_simulate_s">预执行 · $0.06</small></div>
   </div>
 
   <!-- ============ TAB 1: Address Scan (SafeScan) ============ -->
@@ -349,6 +350,67 @@
     </div>
   </div>
 
+  <!-- ============ TAB 6: Tx Simulate (pre-execution dry run) ============ -->
+  <div id="panelSimulate" class="hidden">
+    <div class="card">
+      <div class="row">
+        <select id="simChain2">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="simRunBtn" onclick="runSimulate()" data-i18n="simRunBtn">免费预执行</button>
+      </div>
+      <div class="note" data-i18n="simFreeNote2">把一笔还没发出的交易（from / to / data / value）拿来做链上 dry-run：免费看是否会 revert；支付 $0.06 解锁「执行后会发生什么」——余额、授权额度、目标合约黑名单命中对比报告。不发送任何交易。</div>
+      <div class="row" style="margin-top:10px">
+        <input id="simFrom" placeholder="from（你的地址 0x...）" autocomplete="off" spellcheck="false" style="flex:2" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="simTo" placeholder="to（合约地址 0x...）" autocomplete="off" spellcheck="false" style="flex:2" />
+        <input id="simValue" placeholder="value（单位 wei，默认 0）" autocomplete="off" spellcheck="false" style="flex:1" />
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="simData" placeholder="data（0x... 函数调用，可留空）" autocomplete="off" spellcheck="false" style="flex:3" />
+      </div>
+      <div class="toolbar" style="margin-top:10px">
+        <button class="ghost" onclick="simFill('approve')" data-i18n="simFillApprove">填 approve</button>
+        <button class="ghost" onclick="simFill('transfer')" data-i18n="simFillTransfer">填 transfer</button>
+        <button class="ghost" onclick="simFill('permit')" data-i18n="simFillPermit">填 permit</button>
+      </div>
+    </div>
+
+    <div id="simFreeCard2" class="card round hidden">
+      <p class="section-title" data-i18n="simFreeTitle2">预执行结果（免费）</p>
+      <div id="simFreeBody2"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <button class="usdc-btn" id="simToGate" onclick="document.getElementById('simulateGateCard').classList.remove('hidden');document.getElementById('simFreeCard2').classList.add('hidden');" data-i18n="simSeeImpact">查看执行后影响 →</button>
+      </div>
+    </div>
+
+    <div id="simulateGateCard" class="card round hidden">
+      <div class="locked">
+        <p style="margin:0 0 6px;font-size:16px;font-weight:700" data-i18n="gateTitleT">🔓 解锁「执行后会发生什么」</p>
+        <p class="muted" style="margin:0 0 14px" data-i18n="gateDescT">native 余额变化 · USDC/USDT 余额变化 · 指定 token 授权额度变化 · 目标合约黑名单命中</p>
+        <button class="usdc-btn" id="simulatePayBtn" onclick="startPayment('simulate')" data-i18n="payBtnT">支付 $0.06 USDC 解锁</button>
+        <div class="row" style="justify-content:center;margin-top:12px">
+          <button class="ghost" onclick="showQr('simulate')" data-i18n="qrBtn">📱 手机扫码付</button>
+          <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+          <button class="ghost" id="simulateAfter" onclick="pollPaid('simulate')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+        </div>
+        <div id="simulateQrBox" class="hidden" style="margin-top:12px"><div id="simulateQrImg"></div></div>
+        <p class="note" data-i18n="qrNoteT">用 MetaMask / Trust Wallet 扫码 → 确认转账 0.06 USDC（Base 链），回到本页点「我已支付」自动解锁。</p>
+      </div>
+    </div>
+
+    <div id="simulatePremiumCard" class="card round hidden">
+      <p class="section-title" data-i18n="premiumTitleT">执行后影响报告（已解锁）</p>
+      <div id="simulatePremiumBody"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <button class="ghost" onclick="exportSimulate()" data-i18n="exportBtnT">导出 JSON 报告</button>
+        <button class="ghost" onclick="runSimulate()" data-i18n="newScanBtn">重新预执行</button>
+      </div>
+    </div>
+  </div>
+
   <div class="wallet">
     <span data-i18n="recvAddr">统一收款地址（USDC on Base）：</span><code>0x2409b47a530be3831158f10b08ac93f7d08c1ff2</code><br/>
     <span data-i18n="recvNote">Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。</span>
@@ -442,7 +504,20 @@ const T = {
     gasOpName:"操作", gasPreTitle:"交易预审（输入 to + data 估算）",
     gasFillTransfer:"填 transfer", gasFillApprove:"填 approve", gasFillSwap:"填 swap(估算)",
     gasPreBtn:"预审这笔交易", gasPreNote:"预审仅估算 Gas，不发送交易。approve/swap 的 data 需对应链上函数签名，估算值仅供参考。",
-    gasScanning:"查询中…", gasErr:"Gas 查询失败：", gasPreErr:"预审失败：", gasNoChain:"请先选择链"
+    gasScanning:"查询中…", gasErr:"Gas 查询失败：", gasPreErr:"预审失败：", gasNoChain:"请先选择链",
+    t_simulate:"交易模拟", t_simulate_s:"预执行 · $0.06",
+    simRunBtn:"免费预执行", simFreeNote2:"把一笔还没发出的交易（from / to / data / value）拿来做链上 dry-run：免费看是否会 revert；支付 $0.06 解锁「执行后会发生什么」——余额、授权额度、目标合约黑名单命中对比报告。不发送任何交易。",
+    simFillApprove:"填 approve", simFillTransfer:"填 transfer", simFillPermit:"填 permit", simFreeTitle2:"预执行结果（免费）",
+    simFreeHint:"这只验证了调用能否成功执行。想看「发出后你的钱包会发生什么」——余额变化、授权额度、目标合约是否黑名单——请解锁下方报告。",
+    simTarget:"目标合约", simCallRes:"调用结果", simPass:"执行成功（不会 revert）", simRevert:"调用会 revert", simRevertReason:"Revert 原因",
+    simRep:"目标信誉", simFlagged:"命中本地/内置黑名单", simUnknown:"未知合约（未收录）", simSeeImpact:"查看执行后影响 →",
+    gateTitleT:"🔓 解锁「执行后会发生什么」", gateDescT:"native 余额变化 · USDC/USDT 余额变化 · 指定 token 授权额度变化 · 目标合约黑名单命中",
+    payBtnT:"支付 $0.06 USDC 解锁", qrNoteT:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.06 USDC（Base 链），回到本页点「我已支付」自动解锁。",
+    premiumTitleT:"执行后影响报告（已解锁）", exportBtnT:"导出 JSON 报告",
+    simNativeBefore:"执行前原生币", simNativeAfter:"执行后原生币", simNativeDelta:"原生币变化", simUsdcBefore:"执行前 USDC", simUsdtBefore:"执行前 USDT",
+    simDecoded:"解码返回", simDecApprove:"approve 调用", simDecTransfer:"transfer 调用", simDecTransferFrom:"transferFrom 调用", simDecOk:"成功", simDecFail:"失败",
+    simVerdictRevert:"该交易会 revert，发出即失败、白付 gas", simVerdictFlag:"目标合约命中黑名单，强烈建议不要发送", simVerdictValue:"交易附带非零 value，确认收款方可信", simVerdictSafe:"dry-run 通过且目标未标记，风险较低（仍请自行确认）",
+    simErr:"影响评估失败：", simDisclaimer2:"⚠️ dry-run 基于当前链上状态估算余额/授权变化，无法覆盖合约内部条件分支；实际结果以链上为准。"
   },
   en:{
     appTag:"Address scan · Approval guard · Contract blacklist · one entry for wallet safety",
@@ -526,7 +601,20 @@ const T = {
     gasOpName:"Operation", gasPreTitle:"Tx pre-check (enter to + data)",
     gasFillTransfer:"Fill transfer", gasFillApprove:"Fill approve", gasFillSwap:"Fill swap (est.)",
     gasPreBtn:"Pre-check this tx", gasPreNote:"Pre-check only estimates gas, does not send. approve/swap data needs the on-chain function signature; estimate is for reference.",
-    gasScanning:"Querying…", gasErr:"Gas query failed: ", gasPreErr:"Pre-check failed: ", gasNoChain:"Please select a chain"
+    gasScanning:"Querying…", gasErr:"Gas query failed: ", gasPreErr:"Pre-check failed: ", gasNoChain:"Please select a chain",
+    t_simulate:"Tx Simulate", t_simulate_s:"Pre-exec · $0.06",
+    simRunBtn:"Free dry-run", simFreeNote2:"Dry-run a not-yet-sent tx (from / to / data / value) on-chain: free to see if it reverts; pay $0.06 to unlock \"what happens after execution\" — balance, allowance change, target blacklist hit. No tx is sent.",
+    simFillApprove:"Fill approve", simFillTransfer:"Fill transfer", simFillPermit:"Fill permit", simFreeTitle2:"Dry-run result (free)",
+    simFreeHint:"This only verifies the call executes. To see \"what happens to your wallet after sending\" — balance change, allowance, target blacklist — unlock the report below.",
+    simTarget:"Target contract", simCallRes:"Call result", simPass:"Executes OK (no revert)", simRevert:"Call will revert", simRevertReason:"Revert reason",
+    simRep:"Target reputation", simFlagged:"Matches local/built-in blacklist", simUnknown:"Unknown contract (not listed)", simSeeImpact:"See post-exec impact →",
+    gateTitleT:"🔓 Unlock \"What happens after\"", gateDescT:"native balance change · USDC/USDT balance · allowance change · target blacklist hit",
+    payBtnT:"Pay $0.06 USDC to unlock", qrNoteT:"Scan with MetaMask / Trust Wallet → send 0.06 USDC (Base), return here and click \"I paid\" to auto-unlock.",
+    premiumTitleT:"Post-execution impact report (unlocked)", exportBtnT:"Export JSON report",
+    simNativeBefore:"Native balance before", simNativeAfter:"Native balance after", simNativeDelta:"Native change", simUsdcBefore:"USDC before", simUsdtBefore:"USDT before",
+    simDecoded:"Decoded return", simDecApprove:"approve call", simDecTransfer:"transfer call", simDecTransferFrom:"transferFrom call", simDecOk:"success", simDecFail:"fail",
+    simVerdictRevert:"This tx will revert — sending waste gas", simVerdictFlag:"Target matches blacklist — strongly advised NOT to send", simVerdictValue:"Tx carries non-zero value — confirm recipient trust", simVerdictSafe:"Dry-run passed and target not flagged — lower risk (still verify yourself)",
+    simErr:"Impact eval failed: ", simDisclaimer2:"⚠️ Dry-run estimates balance/allowance changes from current on-chain state; cannot cover internal conditional branches. Actual result on-chain may differ."
   }
 };
 let lang = (localStorage.getItem('hub_lang')||'zh');
@@ -547,7 +635,7 @@ const CHAINS = {
          factory:"0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C", weth:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", router:"0xedf6066a2b290C185783862c7F4776a2c8077ad1" }
 };
 const PAY_ADDR = "0x2409b47a530be3831158f10b08ac93f7d08c1ff2";
-const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04 };
+const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04, simulate:0.06 };
 const CF_TOKEN = "e87dc5dd541b4f69bdd68580a7fee5c9";
 
 /* channel attribution ?src= */
@@ -693,7 +781,7 @@ async function callSilent(chain,to,data){ try{ return await call(chain,to,data);
 let activeTab = 'scan';
 function switchTab(tab){
   activeTab = tab;
-  ['scan','apv','scam','gas','sim'].forEach(k=>{
+  ['scan','apv','scam','gas','sim','simulate'].forEach(k=>{
     document.getElementById('panel'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('hidden', k!==tab);
     document.getElementById('tab'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('active', k===tab);
   });
@@ -721,7 +809,7 @@ async function pollPaid(tab){
   const ok=await verifyPayment(h.trim());
   if(ok) unlockPremium(tab); else toast(t('payFail'));
 }
-function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':'payBtnM'); }
+function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':tab==='simulate'?'payBtnT':'payBtnM'); }
 async function startPayment(tab){
   if(!window.ethereum){ toast(t('walletMissing')); return; }
   let accounts; try{ accounts=await window.ethereum.request({method:'eth_requestAccounts'}); }catch(e){ toast(t('walletDeny')); return; }
@@ -764,6 +852,7 @@ function unlockPremium(tab){
   else if(tab==='apv') renderRevoke();
   else if(tab==='scam') renderScamPremium();
   else if(tab==='sim'){ simPremium=simData; renderSimPremium(simPremium); }
+  else if(tab==='simulate'){ renderSimulatePremium(); }
   toast(t('unlocked'));
   trackEvent('premium_paid',{src:SRC,module:tab,amount:PRICE[tab]});
 }
@@ -1184,6 +1273,150 @@ async function runSim(){
   }catch(e){ toast(t('errScan')+e.message); }
   finally{ btn.disabled=false; btn.textContent=t('simBtn'); }
 }
+
+/* ===================== TAB 6: Tx Simulate (pre-execution dry run) ===================== */
+let simTx = null;
+function simFill(kind){
+  const chain = document.getElementById('simChain2').value; const c = CHAINS[chain];
+  const from = document.getElementById('simFrom').value.trim();
+  if(kind==='approve'){
+    if(!isAddr(from)){ toast(t('errAddr')); return; }
+    document.getElementById('simTo').value = c.weth;
+    document.getElementById('simData').value = SEL.approve + from.toLowerCase().replace(/^0x/,'') + "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+    document.getElementById('simValue').value = '0';
+  } else if(kind==='transfer'){
+    if(!isAddr(from)){ toast(t('errAddr')); return; }
+    document.getElementById('simTo').value = c.usdc;
+    document.getElementById('simData').value = SEL.a9059cbb || "0xa9059cbb";
+    document.getElementById('simValue').value = '0';
+  } else if(kind==='permit'){
+    if(!isAddr(from)){ toast(t('errAddr')); return; }
+    // EIP-2612 permit(owner,spender,value,deadline,v,r,s) — leaves value/deadline zero; just demonstrates selector
+    document.getElementById('simTo').value = c.usdc;
+    document.getElementById('simData').value = "0xd505accf" + from.toLowerCase().replace(/^0x/,'') + "0".repeat(64);
+    document.getElementById('simValue').value = '0';
+  }
+}
+async function runSimulate(){
+  const chain = document.getElementById('simChain2').value;
+  const from = document.getElementById('simFrom').value.trim();
+  const to = document.getElementById('simTo').value.trim();
+  const data = document.getElementById('simData').value.trim();
+  const value = document.getElementById('simValue').value.trim() || '0';
+  if(!isAddr(from)){ toast(t('errAddr')); return; }
+  if(!isAddr(to)){ toast(t('errAddr')); return; }
+  const btn = document.getElementById('simRunBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'+t('scanning');
+  try{
+    const callData = (data && data!=='0x') ? data : '0x';
+    const params = [{ from, to, value: value && value!=='0' ? (value.startsWith('0x')?value:'0x'+BigInt(value).toString(16)) : '0x0', data: callData }, 'latest'];
+    let revertReason = null, ok = false, retHex = null;
+    try{
+      retHex = await rpc(chain, 'eth_call', params);
+      ok = true;
+    }catch(e){
+      ok = false;
+      let msg = e && e.message ? e.message : String(e);
+      // try to extract revert reason string
+      const m = msg.match(/0x[0-9a-fA-F]{8}([0-9a-fA-F]{2})*/);
+      if(/revert/i.test(msg)){
+        try{
+          const hexPart = msg.split('revert').pop().trim();
+          if(/^0x[0-9a-f]+$/.test(hexPart)) revertReason = hexToAscii(hexPart) || msg;
+          else revertReason = msg;
+        }catch(_){ revertReason = msg; }
+      } else { revertReason = msg; }
+    }
+    const targetFlag = flagDetail(to);
+    const targetLabel = knownLabel(to);
+    simTx = { chain, from, to, data: callData, value, ok, retHex, revertReason, targetFlag, targetLabel };
+    // Free tier: show revert status + target reputation only
+    let html = '<div class="kv"><span class="k">'+t('simTarget')+'</span><span class="v">'+to.slice(0,10)+'…'+to.slice(-6)+'</span></div>';
+    if(ok){
+      html += '<div class="kv"><span class="k">'+t('simCallRes')+'</span><span class="v flag f-ok">✓ '+t('simPass')+'</span></div>';
+    } else {
+      html += '<div class="kv"><span class="k">'+t('simCallRes')+'</span><span class="v flag f-bad">✗ '+t('simRevert')+'</span></div>';
+      if(revertReason) html += '<div class="kv"><span class="k">'+t('simRevertReason')+'</span><span class="v" style="word-break:break-all">'+revertReason+'</span></div>';
+    }
+    if(targetFlag){ html += '<div class="kv"><span class="k">'+t('simRep')+'</span><span class="v flag f-bad">⚠ '+t('simFlagged')+'</span></div>'; }
+    else if(targetLabel){ html += '<div class="kv"><span class="k">'+t('simRep')+'</span><span class="v">'+targetLabel+'</span></div>'; }
+    else { html += '<div class="kv"><span class="k">'+t('simRep')+'</span><span class="v muted">'+t('simUnknown')+'</span></div>'; }
+    html += '<p class="muted" style="margin-top:10px">'+t('simFreeHint')+'</p>';
+    document.getElementById('simFreeBody2').innerHTML = html;
+    document.getElementById('simFreeCard2').classList.remove('hidden');
+    document.getElementById('simulateGateCard').classList.add('hidden');
+    document.getElementById('simulatePremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled = false; btn.textContent = t('simRunBtn'); }
+}
+// capture balance / allowance snapshot before execution (dry-run via eth_call)
+async function snap(chain, from, token){
+  const out = {};
+  try{ out.native = Number(BigInt(await rpc(chain,'eth_getBalance',[from,'latest'])))/1e18; }catch(e){ out.native = null; }
+  if(token && isAddr(token)){
+    try{ const b = await callSilent(chain, token, SEL.balanceOf + padAddr(from)); out.tokenBal = b? Number(BigInt(b))/1e6 : null; }catch(e){ out.tokenBal = null; }
+  }
+  return out;
+}
+function renderSimulatePremium(){
+  const d = simTx; if(!d) return;
+  const chain = d.chain, from = d.from, to = d.to, c = CHAINS[chain];
+  // Single-pass: re-run dry-run to get post-state retHex (already in d.retHex), then compare snapshots.
+  (async()=>{
+    try{
+      const beforeNative = await rpc(chain,'eth_getBalance',[from,'latest']);
+      const beforeUsdc = await callSilent(chain, c.usdc, SEL.balanceOf+padAddr(from));
+      const beforeUsdt = await callSilent(chain, (chain==='eth'?'0xdac17f958d2ee523a2206206994597c13d831ec7':chain==='bnb'?'0x55d398326f99059ff775485246999027b3197955':null), SEL.balanceOf+padAddr(from));
+      // estimate native spent by the call: value + (no gas in dry run). Use d.value.
+      const valWei = d.value && d.value!=='0x0' ? (d.value.startsWith('0x')?BigInt(d.value):BigInt(d.value)) : 0n;
+      const afterNative = Number(BigInt(beforeNative) - valWei)/1e18;
+      const usdcBefore = beforeUsdc? Number(BigInt(beforeUsdc))/1e6 : null;
+      const usdtBefore = beforeUsdt? Number(BigInt(beforeUsdt))/1e6 : null;
+      // Decode return data for transfer/approve result hints
+      let decoded = '';
+      if(d.retHex && d.retHex!=='0x'){
+        if(d.data.startsWith('0x095ea7b3')){ // approve
+          decoded = t('simDecApprove');
+        } else if(d.data.startsWith('0xa9059cbb')){ // transfer
+          const okBit = d.retHex.endsWith('01') ? t('simDecOk') : t('simDecFail');
+          decoded = t('simDecTransfer')+' '+okBit;
+        } else if(d.data.startsWith('0x23b872dd')){ // transferFrom
+          decoded = t('simDecTransferFrom');
+        }
+      }
+      let html = '';
+      html += '<div class="kv"><span class="k">'+t('simTarget')+'</span><span class="v">'+to.slice(0,10)+'…'+to.slice(-6)+'</span></div>';
+      // balance change rows
+      html += row(t('simNativeBefore'), (Number(BigInt(beforeNative))/1e18).toFixed(6)+' '+chain.toUpperCase());
+      html += row(t('simNativeAfter'), afterNative.toFixed(6)+' '+chain.toUpperCase());
+      html += row(t('simNativeDelta'), (valWei? '-'+(Number(valWei)/1e18).toFixed(6) : '0')+' '+chain.toUpperCase(), valWei? 'f-bad':'f-ok');
+      if(usdcBefore!=null) html += row(t('simUsdcBefore'), usdcBefore.toFixed(6)+' USDC');
+      if(usdtBefore!=null) html += row(t('simUsdtBefore'), usdtBefore.toFixed(6)+' USDT');
+      if(decoded) html += row(t('simDecoded'), decoded, 'f-ok');
+      // target reputation
+      if(d.targetFlag){ html += row(t('simRep'), '⚠ '+t('simFlagged'), 'f-bad'); }
+      else if(d.targetLabel){ html += row(t('simRep'), d.targetLabel); }
+      else { html += row(t('simRep'), t('simUnknown')); }
+      // verdict
+      let verdict, vcls;
+      if(!d.ok){ verdict = '✗ '+t('simVerdictRevert'); vcls='f-bad'; }
+      else if(d.targetFlag){ verdict = '⚠ '+t('simVerdictFlag'); vcls='f-bad'; }
+      else if(valWei>0n){ verdict = '⚠ '+t('simVerdictValue'); vcls='f-warn'; }
+      else { verdict = '✓ '+t('simVerdictSafe'); vcls='f-ok'; }
+      html += '<div class="flag '+vcls+'" style="margin-top:12px">'+verdict+'</div>';
+      html += '<p class="note" style="margin-top:10px">'+t('simDisclaimer2')+'</p>';
+      document.getElementById('simulatePremiumBody').innerHTML = html;
+    }catch(e){
+      document.getElementById('simulatePremiumBody').innerHTML = '<p class="flag f-bad">'+t('simErr')+e.message+'</p>';
+    }
+  })();
+}
+function row(k,v,cls){ return '<div class="kv"><span class="k">'+k+'</span><span class="v'+(cls?(' '+cls):'')+'">'+v+'</span></div>'; }
+function exportSimulate(){
+  if(!simTx) return;
+  const report = Object.assign({}, simTx, { payTo:PAY_ADDR, price:PRICE.simulate, generatedAt:new Date().toISOString(), disclaimer:t('disclaimer') });
+  const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "tx-simulation.json"; a.click();
+}
 function renderSimFree(d){
   let html=`<div class="kv"><span class="k">${t('simType')}</span><span class="v">${t('contract')}</span></div>`;
   html+=`<div class="kv"><span class="k">${t('simSize')}</span><span class="v">${d.size} bytes</span></div>`;
@@ -1227,16 +1460,17 @@ function setLang(l){ lang=l; localStorage.setItem('hub_lang',l); document.docume
   if(apvData) renderApvFree(); if(approvals.some(a=>a.risk!=='low')) renderRevoke();
   if(scamData) renderScamFree(scamData); if(scamPremium) renderScamPremium();
   if(simData) renderSimFree(simData); if(simPremium) renderSimPremium(simPremium);
+  if(simTx) renderSimulatePremium();
 }
 setLang(lang);
 (function(){ try{ const p=new URLSearchParams(location.search); const tab=p.get('tab'); const a=p.get('addr'); const c=p.get('chain');
-  if(tab&&['scan','apv','scam','gas','sim'].includes(tab)) switchTab(tab);
+  if(tab&&['scan','apv','scam','gas','sim','simulate'].includes(tab)) switchTab(tab);
   if(a&&isAddr(a)){
-    const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr',sim:'simAddr'}[activeTab];
-    const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain',sim:'simChain'}[activeTab];
+    const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr',sim:'simAddr',simulate:'simTo'}[activeTab];
+    const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain',sim:'simChain',simulate:'simChain2'}[activeTab];
     if(idMap&&document.getElementById(idMap)) document.getElementById(idMap).value=a;
     if(c&&CHAINS[c]&&chainMap&&document.getElementById(chainMap)) document.getElementById(chainMap).value=c;
-    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else if(activeTab==='scam') runScam(); else if(activeTab==='sim') runSim(); },50);
+    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else if(activeTab==='scam') runScam(); else if(activeTab==='sim') runSim(); else if(activeTab==='simulate') runSimulate(); },50);
   } }catch(e){} })();
 </script>
 </body>
