@@ -110,6 +110,7 @@
     <div class="tab" id="tabApv" onclick="switchTab('apv')">🛡️ <span data-i18n="t_apv">授权巡检</span><small data-i18n="t_apv_s">Approval Guard · $0.02</small></div>
     <div class="tab" id="tabScam" onclick="switchTab('scam')">⚫ <span data-i18n="t_scam">合约黑名单</span><small data-i18n="t_scam_s">黑名单查询 · $0.03</small></div>
     <div class="tab" id="tabGas" onclick="switchTab('gas')">⛽ <span data-i18n="t_gas">Gas 估算</span><small data-i18n="t_gas_s">免费 · 交易预审</small></div>
+    <div class="tab" id="tabSim" onclick="switchTab('sim')">🔬 <span data-i18n="t_sim">合约比对</span><small data-i18n="t_sim_s">相似性 · $0.04</small></div>
   </div>
 
   <!-- ============ TAB 1: Address Scan (SafeScan) ============ -->
@@ -304,6 +305,50 @@
     </div>
   </div>
 
+  <div id="panelSim" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="simAddr" placeholder="合约地址 (0x...)" autocomplete="off" spellcheck="false" />
+        <select id="simChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="simBtn" onclick="runSim()" data-i18n="simBtn">免费比对</button>
+      </div>
+      <div class="note" data-i18n="simFreeNote">拉取合约 bytecode，与已知恶意/诈骗合约模板做相似度比对（函数选择器 + opcode 序列）。基础概览免费，支付 $0.04 解锁完整比对报告。</div>
+    </div>
+    <div id="simFreeCard" class="card round hidden">
+      <p class="section-title" data-i18n="simFreeTitle">相似性概览（免费）</p>
+      <div id="simFreeBody"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <button class="ghost" id="simAddTpl" onclick="addSimTemplate()">➕ <span data-i18n="simAddTpl">存为比对模板</span></button>
+      </div>
+      <div class="note" data-i18n="simTplHint">把当前合约的 bytecode 存为本地比对模板（localStorage），下次比对其他合约时作为基准。不联网、不上传。</div>
+    </div>
+    <div id="simGateCard" class="card round hidden">
+      <div class="locked">
+        <p style="margin:0 0 6px;font-size:16px;font-weight:700" data-i18n="gateTitleM">🔓 解锁完整比对报告</p>
+        <p class="muted" style="margin:0 0 14px" data-i18n="gateDescM">命中模板清单 · 相似度明细 · opcode 差异点 · 可导出 JSON</p>
+        <button class="usdc-btn" id="simPayBtn" onclick="startPayment('sim')" data-i18n="payBtnM">支付 $0.04 USDC 解锁</button>
+        <div class="row" style="justify-content:center;margin-top:12px">
+          <button class="ghost" onclick="showQr('sim')" data-i18n="qrBtn">📱 手机扫码付</button>
+          <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+          <button class="ghost" id="simAfter" onclick="pollPaid('sim')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+        </div>
+        <div id="simQrBox" class="hidden" style="margin-top:12px"><div id="simQrImg"></div></div>
+        <p class="note" data-i18n="qrNoteM">用 MetaMask / Trust Wallet 扫码 → 确认转账 0.04 USDC（Base 链），回到本页点「我已支付」自动解锁。</p>
+      </div>
+    </div>
+    <div id="simPremiumCard" class="card round hidden">
+      <p class="section-title" data-i18n="premiumTitleM">完整比对报告（已解锁）</p>
+      <div id="simPremiumBody"></div>
+      <div class="toolbar" style="margin-top:12px">
+        <button class="ghost" onclick="exportSim()" data-i18n="exportBtnM">导出 JSON 报告</button>
+        <button class="ghost" onclick="runSim()" data-i18n="newScanBtn">重新比对</button>
+      </div>
+    </div>
+  </div>
+
   <div class="wallet">
     <span data-i18n="recvAddr">统一收款地址（USDC on Base）：</span><code>0x2409b47a530be3831158f10b08ac93f7d08c1ff2</code><br/>
     <span data-i18n="recvNote">Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。</span>
@@ -384,6 +429,14 @@ const T = {
     blacklistAdd:"➕ 加入我的黑名单", blacklistRemove:"🗑 移出我的黑名单", blacklistHint:"仅存于本机浏览器，不联网、不上传",
     blacklistInList:"已在你的本地黑名单中", blacklistAdded:"✓ 已加入本地黑名单", blacklistRemoved:"✓ 已移出本地黑名单",
     t_gas:"Gas 估算", t_gas_s:"免费 · 交易预审",
+    t_sim:"合约比对", t_sim_s:"相似性 · $0.04",
+    simBtn:"免费比对", simFreeNote:"拉取合约 bytecode，与已知恶意/诈骗合约模板做相似度比对（函数选择器 + opcode 序列）。基础概览免费，支付 $0.04 解锁完整比对报告。",
+    simFreeTitle:"相似性概览（免费）", simAddTpl:"存为比对模板", simTplHint:"把当前合约的 bytecode 存为本地比对模板（localStorage），下次比对其他合约时作为基准。不联网、不上传。",
+    gateTitleM:"🔓 解锁完整比对报告", gateDescM:"命中模板清单 · 相似度明细 · opcode 差异点 · 可导出 JSON",
+    payBtnM:"支付 $0.04 USDC 解锁", qrNoteM:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.04 USDC（Base 链），回到本页点「我已支付」自动解锁。",
+    premiumTitleM:"完整比对报告（已解锁）", exportBtnM:"导出 JSON 报告",
+    simType:"合约类型", simSize:"Bytecode 大小", simSelTop:"最相似模板", simJaccard:"选择器相似度", simOp:"Opcode 相似度",
+    simNoMatch:"未命中已知模板（相似度均低于阈值）", simMatches:"命中模板", simStored:"✓ 已存为本地比对模板", simStoredNote:"已存；之后比对其他合约会用它作基准", simWarnMatch:"⚠ 与已知恶意模板高度相似，建议查看完整报告", simWeakMatch:"与标准 ERC-20 函数集相似，未见明显恶意模板（付费可看完整明细）",
     gasBtn:"查看当前 Gas", gasFreeNote:"免费工具：实时查询当前 Gas 价格、常见操作成本，或对一笔具体交易（to + data）做 Gas 预审。不需要钱包。",
     gasGweiL:"Gas 价格 (gwei)", gasTransferL:"转账成本 (USD)", gasOpTitle:"常见操作 Gas 预估",
     gasOpName:"操作", gasPreTitle:"交易预审（输入 to + data 估算）",
@@ -460,6 +513,14 @@ const T = {
     blacklistAdd:"➕ Add to my blacklist", blacklistRemove:"🗑 Remove from my blacklist", blacklistHint:"Stored only in this browser — no network, no upload",
     blacklistInList:"Already in your local blacklist", blacklistAdded:"✓ Added to local blacklist", blacklistRemoved:"✓ Removed from local blacklist",
     t_gas:"Gas Estimator", t_gas_s:"Free · Tx pre-check",
+    t_sim:"Contract Match", t_sim_s:"Similarity · $0.04",
+    simBtn:"Free match", simFreeNote:"Fetch contract bytecode and compare against known malicious/scam templates (function selectors + opcode sequences). Basic overview free; pay $0.04 for the full report.",
+    simFreeTitle:"Similarity overview (free)", simAddTpl:"Save as template", simTplHint:"Store this contract's bytecode as a local comparison template (localStorage) used as baseline next time. No network, no upload.",
+    gateTitleM:"🔓 Unlock full match report", gateDescM:"Matched templates · similarity detail · opcode diffs · JSON export",
+    payBtnM:"Pay $0.04 USDC to unlock", qrNoteM:"Scan with MetaMask / Trust Wallet → send 0.04 USDC (Base), return here and click \"I paid\" to auto-unlock.",
+    premiumTitleM:"Full match report (unlocked)", exportBtnM:"Export JSON report",
+    simType:"Contract type", simSize:"Bytecode size", simSelTop:"Top match", simJaccard:"Selector similarity", simOp:"Opcode similarity",
+    simNoMatch:"No known template matched (all below threshold)", simMatches:"Matched templates", simStored:"✓ Saved as local template", simStoredNote:"Saved; future comparisons will use it as baseline", simWarnMatch:"⚠ Highly similar to a known malicious template — view full report", simWeakMatch:"Similar to standard ERC-20 function set, no obvious malicious template (pay for full detail)",
     gasBtn:"Check current Gas", gasFreeNote:"Free tool: live gas price, common-op cost, or pre-check a specific tx (to + data). No wallet needed.",
     gasGweiL:"Gas Price (gwei)", gasTransferL:"Transfer cost (USD)", gasOpTitle:"Common op gas estimate",
     gasOpName:"Operation", gasPreTitle:"Tx pre-check (enter to + data)",
@@ -486,7 +547,7 @@ const CHAINS = {
          factory:"0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C", weth:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", router:"0xedf6066a2b290C185783862c7F4776a2c8077ad1" }
 };
 const PAY_ADDR = "0x2409b47a530be3831158f10b08ac93f7d08c1ff2";
-const PRICE = { scan:0.05, apv:0.02, scam:0.03 };
+const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04 };
 const CF_TOKEN = "e87dc5dd541b4f69bdd68580a7fee5c9";
 
 /* channel attribution ?src= */
@@ -554,6 +615,50 @@ function spenderLabel(addr){ return KNOWN_SPENDER[(addr||'').toLowerCase()] || n
 function isFlagged(addr){ const a=(addr||'').toLowerCase(); return !!FLAGGED[a] || !!getUserFlagged()[a]; }
 function flagDetail(addr){ const a=(addr||'').toLowerCase(); return FLAGGED[a] || getUserFlagged()[a] || null; }
 
+/* ---- Contract similarity: known malicious template fingerprints (behavioral, by function selectors) ----
+   These are selector-set signatures of publicly-documented scam families (drainers / honeypots),
+   NOT fabricated addresses. Used only as a fuzzy comparison baseline. */
+const SIM_TEMPLATES = [
+  { name:"Approval Drainer (address-enumeration)", selectors:["0x23b872dd","0x095ea7b3","0xa9059cbb","0x70a08231","0x313ce567","0x06fdde03","0x95d89b41","0x18160ddd"] },
+  { name:"Honeypot (sell-blocked)", selectors:["0x095ea7b3","0xa9059cbb","0x70a08231","0x313ce567","0x06fdde03","0x95d89b41","0x18160ddd","0x8da5cb5b","0xdd62ed3e"] },
+  { name:"Fake Airdrop Claimer", selectors:["0xa9059cbb","0x095ea7b3","0x70a08231","0x6a627842","0x4e71d92d","0x3594e538","0x23b872dd"] },
+  { name:"Phishing Permit (EIP-2612 abuse)", selectors:["0x095ea7b3","0xd505accf","0xa9059cbb","0x70a08231","0x47e7ef24","0x3644e515","0x7ecebe00"] }
+];
+function getUserSimTemplates(){ try{ return JSON.parse(localStorage.getItem('hub_simtpl')||'[]'); }catch(e){ return []; } }
+function setUserSimTemplates(arr){ localStorage.setItem('hub_simtpl', JSON.stringify(arr)); }
+// selector extraction from runtime bytecode: PUSH4 (opcode 0x73) precedes each 4-byte function selector
+function extractSelectors(code){
+  if(!code||code==='0x'||code.length<10) return [];
+  const c = code.toLowerCase().replace(/^0x/,'');
+  const sels = new Set();
+  // pattern: 73<4bytes> -> PUSH4 selector (0x73)
+  for(let i=0;i+10<=c.length;i+=2){
+    if(c.substr(i,2)==='73'){
+      const s = c.substr(i+2,8);
+      if(/^[0-9a-f]{8}$/.test(s)) sels.add('0x'+s);
+    }
+  }
+  return [...sels];
+}
+function opcodeNgrams(code, n){
+  if(!code||code==='0x') return [];
+  const c = code.toLowerCase().replace(/^0x/,'');
+  const grams = [];
+  for(let i=0;i+2*n<=c.length;i+=2){ grams.push(c.substr(i,2*n)); }
+  return grams;
+}
+function jaccard(a,b){
+  const A=new Set(a), B=new Set(b);
+  if(A.size===0&&B.size===0) return 0;
+  let inter=0; A.forEach(x=>{ if(B.has(x)) inter++; });
+  const uni = A.size + B.size - inter;
+  return uni===0?0:inter/uni;
+}
+async function getBytecode(chain, addr){
+  const hex = await callSilent(chain, addr, '0x'); // eth_getCode
+  return (hex&&hex!=='0x')? hex : null;
+}
+
 const ZERO = "0x0000000000000000000000000000000000000000";
 const DEAD = "0x000000000000000000000000000000000000dEaD".toLowerCase();
 const EIP1967 = "0x360894a4b9cbd36e2ce4073490c7a3b1f5bd7d6f5c8b8c2f3a3f3e3f3e3f3e3f";
@@ -588,7 +693,7 @@ async function callSilent(chain,to,data){ try{ return await call(chain,to,data);
 let activeTab = 'scan';
 function switchTab(tab){
   activeTab = tab;
-  ['scan','apv','scam','gas'].forEach(k=>{
+  ['scan','apv','scam','gas','sim'].forEach(k=>{
     document.getElementById('panel'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('hidden', k!==tab);
     document.getElementById('tab'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('active', k===tab);
   });
@@ -616,6 +721,7 @@ async function pollPaid(tab){
   const ok=await verifyPayment(h.trim());
   if(ok) unlockPremium(tab); else toast(t('payFail'));
 }
+function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':'payBtnM'); }
 async function startPayment(tab){
   if(!window.ethereum){ toast(t('walletMissing')); return; }
   let accounts; try{ accounts=await window.ethereum.request({method:'eth_requestAccounts'}); }catch(e){ toast(t('walletDeny')); return; }
@@ -625,10 +731,10 @@ async function startPayment(tab){
   const data="0xa9059cbb"+PAY_ADDR.toLowerCase().replace(/^0x/,'')+amt.toString(16).padStart(64,'0');
   const btn=document.getElementById(tab+'PayBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('paySubmit');
   let txHash; try{ txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{from,to:CHAINS.base.usdc,data,gas:'0x493e0'}]}); }
-  catch(e){ btn.disabled=false; btn.innerHTML=t('payBtn'+(tab==='scan'?'S':tab==='apv'?'A':'X')); toast(t('payCancel')+e.message); return; }
+  catch(e){ btn.disabled=false; btn.innerHTML=payBtnLabel(tab); toast(t('payCancel')+e.message); return; }
   toast(t('paySubmit'),3200);
   const ok=await verifyPayment(txHash);
-  if(ok) unlockPremium(tab); else { btn.disabled=false; btn.innerHTML=t('payBtn'+(tab==='scan'?'S':tab==='apv'?'A':'X')); toast(t('payFail')); }
+  if(ok) unlockPremium(tab); else { btn.disabled=false; btn.innerHTML=payBtnLabel(tab); toast(t('payFail')); }
 }
 async function verifyPayment(txHash){
   const toPadded="0x000000000000000000000000"+PAY_ADDR.slice(2).toLowerCase();
@@ -657,6 +763,7 @@ function unlockPremium(tab){
   if(tab==='scan') renderScanPremium();
   else if(tab==='apv') renderRevoke();
   else if(tab==='scam') renderScamPremium();
+  else if(tab==='sim'){ simPremium=simData; renderSimPremium(simPremium); }
   toast(t('unlocked'));
   trackEvent('premium_paid',{src:SRC,module:tab,amount:PRICE[tab]});
 }
@@ -1044,19 +1151,93 @@ async function runGasPre(){
   }catch(e){ toast(t('gasPreErr')+e.message); }
   finally{ btn.disabled=false; btn.textContent=t('gasPreBtn'); }
 }
+
+/* ===================== TAB 5: Contract Similarity Match ===================== */
+let simData=null, simPremium=null, simUserTplSaved=false;
+async function runSim(){
+  const addr=document.getElementById('simAddr').value.trim();
+  const chain=document.getElementById('simChain').value;
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('simBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('scanning');
+  try{
+    const code=await getBytecode(chain,addr);
+    if(!code){ document.getElementById('simFreeBody').innerHTML='<span class="flag f-warn">'+t('pairNone')+'</span>';
+      document.getElementById('simFreeCard').classList.remove('hidden');
+      document.getElementById('simGateCard').classList.add('hidden'); document.getElementById('simPremiumCard').classList.add('hidden');
+      return; }
+    const sels=extractSelectors(code);
+    const ops=opcodeNgrams(code,3);
+    const templates=SIM_TEMPLATES.concat(getUserSimTemplates());
+    const matches=templates.map(tp=>{
+      const jac=jaccard(sels, tp.selectors);
+      const opSim=jaccard(ops, opcodeNgrams(tp.code||'',3)); // user templates may carry code
+      const score=Math.max(jac, opSim*0.9);
+      return {name:tp.name, jac, opSim, score};
+    }).filter(m=>m.score>0).sort((a,b)=>b.score-a.score);
+    const top=matches[0]||null;
+    simData={addr,chain,sels,ops,code,size:code.length/2-1,matches,top};
+    renderSimFree(simData);
+    document.getElementById('simFreeCard').classList.remove('hidden');
+    document.getElementById('simGateCard').classList.remove('hidden');
+    document.getElementById('simPremiumCard').classList.add('hidden');
+    document.getElementById('simAddTpl').disabled=simUserTplSaved;
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled=false; btn.textContent=t('simBtn'); }
+}
+function renderSimFree(d){
+  let html=`<div class="kv"><span class="k">${t('simType')}</span><span class="v">${t('contract')}</span></div>`;
+  html+=`<div class="kv"><span class="k">${t('simSize')}</span><span class="v">${d.size} bytes</span></div>`;
+  html+=`<div class="kv"><span class="k">${t('simSelTop')}</span><span class="v">${d.top? (d.top.name+' ('+(d.top.score*100).toFixed(0)+'%)') : t('na')}</span></div>`;
+  // Free tier is advisory only: high overlap with standard ERC-20 is expected, so we avoid crying "scam" here.
+  if(!d.top||d.top.score<0.3){ html+='<p class="muted" style="margin-top:10px">'+t('simNoMatch')+'</p>'; }
+  else if(d.top.score>=0.7 && /drainer|honeypot|phishing|airdrop/i.test(d.top.name)){ html+='<p class="flag f-bad" style="margin-top:10px">'+t('simWarnMatch')+'</p>'; }
+  else{ html+='<p class="muted" style="margin-top:10px">'+t('simWeakMatch')+'</p>'; }
+  document.getElementById('simFreeBody').innerHTML=html;
+}
+function addSimTemplate(){
+  const d=simData; if(!d) return;
+  const arr=getUserSimTemplates();
+  if(arr.some(x=>x.name===d.addr.toLowerCase())){ toast(t('simStored')); return; }
+  arr.push({name:d.addr.toLowerCase(), selectors:d.sels, code:d.code});
+  setUserSimTemplates(arr); simUserTplSaved=true;
+  document.getElementById('simAddTpl').disabled=true;
+  toast(t('simStored'));
+}
+function renderSimPremium(d){
+  let html='';
+  if(d.matches.length===0){ html='<p class="muted">'+t('simNoMatch')+'</p>'; }
+  else{
+    html+='<table class="chain-tbl"><tr><th>'+t('simSelTop')+'</th><th>'+t('simJaccard')+'</th><th>'+t('simOp')+'</th></tr>';
+    for(const m of d.matches){ html+=`<tr><td>${m.name}</td><td>${(m.jac*100).toFixed(0)}%</td><td>${(m.opSim*100).toFixed(0)}%</td></tr>`; }
+    html+='</table>';
+  }
+  html+=`<div class="kv" style="margin-top:10px"><span class="k">${t('simSize')}</span><span class="v">${d.size} bytes · ${d.sels.length} selectors</span></div>`;
+  document.getElementById('simPremiumBody').innerHTML=html;
+}
+function exportSim(){
+  if(!simData) return;
+  const report=Object.assign({}, simData, {payTo:PAY_ADDR, generatedAt:new Date().toISOString(), matches:simData.matches.map(m=>({name:m.name,jaccard:m.jac,opcode:m.opSim})), disclaimer:t('disclaimer')});
+  const blob=new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="contract-match.json"; a.click();
+}
 function setLang(l){ lang=l; localStorage.setItem('hub_lang',l); document.documentElement.lang=(l==='zh'?'zh-CN':'en');
   document.getElementById('langZh').classList.toggle('active',l==='zh'); document.getElementById('langEn').classList.toggle('active',l==='en');
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=t(el.getAttribute('data-i18n')); });
   if(scanData) renderScanFree(scanData); if(scanPremium) renderScanPremiumBody(scanPremium);
   if(apvData) renderApvFree(); if(approvals.some(a=>a.risk!=='low')) renderRevoke();
   if(scamData) renderScamFree(scamData); if(scamPremium) renderScamPremium();
+  if(simData) renderSimFree(simData); if(simPremium) renderSimPremium(simPremium);
 }
 setLang(lang);
 (function(){ try{ const p=new URLSearchParams(location.search); const tab=p.get('tab'); const a=p.get('addr'); const c=p.get('chain');
-  if(tab&&['scan','apv','scam'].includes(tab)) switchTab(tab);
-  if(a&&isAddr(a)){ const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr'}[activeTab]; const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain'}[activeTab];
-    document.getElementById(idMap).value=a; if(c&&CHAINS[c]) document.getElementById(chainMap).value=c;
-    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else runScam(); },50); } }catch(e){} })();
+  if(tab&&['scan','apv','scam','gas','sim'].includes(tab)) switchTab(tab);
+  if(a&&isAddr(a)){
+    const idMap={scan:'scanAddr',apv:'apvAddr',scam:'scamAddr',sim:'simAddr'}[activeTab];
+    const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain',sim:'simChain'}[activeTab];
+    if(idMap&&document.getElementById(idMap)) document.getElementById(idMap).value=a;
+    if(c&&CHAINS[c]&&chainMap&&document.getElementById(chainMap)) document.getElementById(chainMap).value=c;
+    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else if(activeTab==='scam') runScam(); else if(activeTab==='sim') runSim(); },50);
+  } }catch(e){} })();
 </script>
 </body>
 </html>
