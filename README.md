@@ -2,9 +2,9 @@
 
 A single-entry wallet-security toolkit — three tools in one client-side page. **No backend, no KYC, no platform fee.** All paid unlocks settle in USDC directly to `0x2409b47a530be3831158f10b08ac93f7d08c1ff2`.
 
-> Built by merging SafeScan + ApprovalGuard, then adding four more modules — Contract Blacklist, Gas Estimator, Contract Similarity, and Tx Simulate — into one page with six tabs.
+> A single-entry wallet-security toolkit — nine modules in one client-side page. **No backend, no KYC, no platform fee.** All paid unlocks settle in USDC directly to `0x2409b47a530be3831158f10b08ac93f7d08c1ff2`.
 
-## Six modules
+## Nine modules
 
 | Module | What it does | Free | Paid unlock |
 |---|---|---|---|
@@ -14,6 +14,9 @@ A single-entry wallet-security toolkit — three tools in one client-side page. 
 | ⛽ Gas Estimator | Live gas price, common-op cost, **tx pre-check** (estimate gas for to + data) | ✅ Fully free | Lead-in tool, no charge — funnels to the paid modules above |
 | 🔬 Contract Similarity | Fetch bytecode, compare to known malicious templates via **function-selector + opcode similarity** | ✅ Overview (top similarity + template name) | **$0.04 USDC** → full comparison report (all-template similarity breakdown + save as local baseline + JSON export) |
 | 🎯 Tx Simulate | Dry-run an unsigned tx (from/to/data/value) on-chain, **free to see if it reverts** | ✅ Pre-exec result (revert? + target reputation) | **$0.06 USDC** → post-execution impact report (native balance change + USDC/USDT balance + allowance change + target blacklist hit + verdict + JSON export) |
+| 🧹 Approval Sweeper | Batch-generate revoke calldata for all flagged approvals | ✅ Scan | **$0.05 USDC** → batch revoke generator (all flagged + calldata list + EIP-681 + JSON export) |
+| 🧾 Tx Decoder | Decode any Base tx hash (from/to/value/status) | ✅ Basic info | **$0.05 USDC** → full decode (method + called contracts + ERC-20/721 transfers + events + internal calls) |
+| 📊 Security Report Pro | One-pass scan + approvals + blacklist, composite risk score | ✅ Preview | **$1.99 USDC** → full report (risk score + itemized remediation + copyable Markdown + download .md) |
 
 ## Contract blacklist data
 
@@ -31,7 +34,7 @@ A single-entry wallet-security toolkit — three tools in one client-side page. 
 
 ## Usage
 
-Open **https://nope-9uk.pages.dev/**, pick a tab, paste an address.
+Open **https://nope-9uk.pages.dev/** or **https://foxxx009.github.io/wallet-security-hub/**, pick a tab, paste an address.
 
 ⚠️ Scores are heuristic judgments based on public on-chain data. Not investment advice, not a substitute for a professional audit.
 
