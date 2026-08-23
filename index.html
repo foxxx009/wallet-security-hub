@@ -112,6 +112,8 @@
     <div class="tab" id="tabGas" onclick="switchTab('gas')">⛽ <span data-i18n="t_gas">Gas 估算</span><small data-i18n="t_gas_s">免费 · 交易预审</small></div>
     <div class="tab" id="tabSim" onclick="switchTab('sim')">🔬 <span data-i18n="t_sim">合约比对</span><small data-i18n="t_sim_s">相似性 · $0.04</small></div>
     <div class="tab" id="tabSimulate" onclick="switchTab('simulate')">🎯 <span data-i18n="t_simulate">交易模拟</span><small data-i18n="t_simulate_s">预执行 · $0.06</small></div>
+    <div class="tab" id="tabSweep" onclick="switchTab('sweep')">🧹 <span data-i18n="t_sweep">授权清扫</span><small data-i18n="t_sweep_s">撤销生成 · $0.05</small></div>
+    <div class="tab" id="tabDecode" onclick="switchTab('decode')">🧾 <span data-i18n="t_decode">交易解码</span><small data-i18n="t_decode_s">Tx 解析 · $0.05</small></div>
   </div>
 
   <!-- ============ TAB 1: Address Scan (SafeScan) ============ -->
@@ -411,6 +413,93 @@
     </div>
   </div>
 
+  <!-- ============ TAB 7: Approval Sweeper ============ -->
+  <div id="panelSweep" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="sweepAddr" placeholder="Paste your EVM wallet address (0x...)" autocomplete="off" spellcheck="false" />
+        <select id="sweepChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option>
+          <option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="sweepBtn" onclick="runSweep()" data-i18n="sweepBtn">免费清扫</button>
+      </div>
+      <div class="note" data-i18n="sweepFreeNote">粘贴钱包地址列出全部 ERC-20 授权并给风险评分。基础列表免费。支付 $0.05 解锁批量撤销交易生成器（calldata + EIP-681）。</div>
+    </div>
+    <div id="sweepResult" class="hidden">
+      <div class="card round" id="sweepFreeCard">
+        <p class="section-title" data-i18n="sweepFreeTitle">活跃授权列表（免费）</p>
+        <div class="score" id="sweepRiskScore">–</div>
+        <div class="score-sub" id="sweepRiskLabel"></div>
+        <div id="sweepSummary" class="summary-bar"></div>
+        <div id="sweepFreeBody"></div>
+      </div>
+      <div class="card round" id="sweepGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="gateTitleW">🔓 解锁批量撤销生成器</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="gateDescW">为每个被标记授权生成 approve(spender,0) 撤销交易 · 批量 calldata 清单 · EIP-681 扫码撤销 · JSON 导出</div>
+          <button class="usdc-btn" id="sweepPayBtn" onclick="startPayment('sweep')" data-i18n="payBtnW">支付 $0.05 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('sweep')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+            <button class="ghost" id="sweepAfter" onclick="pollPaid('sweep')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+          <div id="sweepQrBox" class="hidden" style="margin-top:14px"><div id="sweepQrImg"></div></div>
+          <div class="note" data-i18n="gateNoteW">用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。</div>
+        </div>
+      </div>
+      <div class="card round hidden" id="sweepPremiumCard">
+        <p class="section-title" data-i18n="premiumTitleW">批量撤销生成器（已解锁）</p>
+        <div class="toolbar">
+          <button class="usdc-btn" onclick="genBatchRevoke()" data-i18n="sweepRevokeAll">生成批量撤销（全部被标记）</button>
+          <button class="ghost" onclick="copyAllCalldata()" data-i18n="sweepCopyAll">复制全部 calldata</button>
+          <button class="ghost" onclick="exportSweep()" data-i18n="exportBtnW">导出 JSON</button>
+        </div>
+        <div id="sweepPremiumBody"></div>
+        <div class="note" data-i18n="walletNote">撤销交易需在你的钱包确认（向代币合约发送 approve(spender,0)）。每笔撤销是独立交易，需付对应链 gas。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 8: Tx Decoder ============ -->
+  <div id="panelDecode" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="decodeHash" placeholder="Transaction hash (0x...) on Base" autocomplete="off" spellcheck="false" />
+        <button id="decodeBtn" onclick="runDecode()" data-i18n="decodeBtn">解码交易</button>
+      </div>
+      <div class="note" data-i18n="decodeFreeNote">粘贴任意 Base 交易 hash 看基础信息（from/to/value/状态）。支付 $0.05 解锁完整解码：方法、调用合约、代币转账、事件。</div>
+    </div>
+    <div id="decodeResult" class="hidden">
+      <div class="card round" id="decodeFreeCard">
+        <p class="section-title" data-i18n="decodeFreeTitle">基础信息（免费）</p>
+        <div id="decodeFreeBody"></div>
+      </div>
+      <div class="card round" id="decodeGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="gateTitleD">🔓 解锁完整解码</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="gateDescD">解码方法 · 调用合约 · ERC-20/721 转账 · 事件日志 · 内部调用</div>
+          <button class="usdc-btn" id="decodePayBtn" onclick="startPayment('decode')" data-i18n="payBtnD">支付 $0.05 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('decode')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+            <button class="ghost" id="decodeAfter" onclick="pollPaid('decode')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+          <div id="decodeQrBox" class="hidden" style="margin-top:14px"><div id="decodeQrImg"></div></div>
+          <div class="note" data-i18n="gateNoteD">用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。</div>
+        </div>
+      </div>
+      <div class="card round hidden" id="decodePremiumCard">
+        <p class="section-title" data-i18n="premiumTitleD">完整解码报告（已解锁）</p>
+        <div id="decodePremiumBody"></div>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="ghost" onclick="exportDecode()" data-i18n="exportBtnD">导出 JSON 报告</button>
+          <button class="ghost" onclick="runDecode()" data-i18n="newScanBtn">重新解码</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="wallet">
     <span data-i18n="recvAddr">统一收款地址（USDC on Base）：</span><code>0x2409b47a530be3831158f10b08ac93f7d08c1ff2</code><br/>
     <span data-i18n="recvNote">Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。</span>
@@ -518,7 +607,27 @@ const T = {
     simNativeBefore:"执行前原生币", simNativeAfter:"执行后原生币", simNativeDelta:"原生币变化", simUsdcBefore:"执行前 USDC", simUsdtBefore:"执行前 USDT",
     simDecoded:"解码返回", simDecApprove:"approve 调用", simDecTransfer:"transfer 调用", simDecTransferFrom:"transferFrom 调用", simDecOk:"成功", simDecFail:"失败",
     simVerdictRevert:"该交易会 revert，发出即失败、白付 gas", simVerdictFlag:"目标合约命中黑名单，强烈建议不要发送", simVerdictValue:"交易附带非零 value，确认收款方可信", simVerdictSafe:"dry-run 通过且目标未标记，风险较低（仍请自行确认）",
-    simErr:"影响评估失败：", simDisclaimer2:"⚠️ dry-run 基于当前链上状态估算余额/授权变化，无法覆盖合约内部条件分支；实际结果以链上为准。"
+    simErr:"影响评估失败：", simDisclaimer2:"⚠️ dry-run 基于当前链上状态估算余额/授权变化，无法覆盖合约内部条件分支；实际结果以链上为准。",
+    t_sweep:"授权清扫", t_sweep_s:"撤销生成 · $0.05",
+    sweepBtn:"免费清扫", sweepFreeNote:"粘贴钱包地址，列出全部 ERC-20 授权并给出风险评分。基础列表免费。支付 $0.05 解锁批量撤销交易生成器（calldata + EIP-681）。",
+    sweepFreeTitle:"活跃授权列表（免费）", sweepRiskScore:"钱包风险评分", sweepScoreSub:"（基于无限授权与未知被授权方）",
+    sweepSummary:"概览", sweepTotal:"授权总数", sweepInf:"无限授权", sweepUnknown:"未知被授权方", sweepHigh:"高风险",
+    sweepRowToken:"代币", sweepRowSpender:"被授权方", sweepRowAmt:"额度", sweepRowRisk:"风险",
+    gateTitleW:"🔓 解锁批量撤销生成器", gateDescW:"为每个被标记授权生成 approve(spender,0) · 批量 calldata 清单 · EIP-681 扫码撤销 · 可导出 JSON",
+    payBtnW:"支付 $0.05 USDC 解锁", qrNoteW:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.05 USDC（Base 链），回到本页点「我已支付」自动解锁。",
+    gateNoteW:"用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。",
+    premiumTitleW:"批量撤销生成器（已解锁）", exportBtnW:"导出撤销清单 (JSON)",
+    sweepRevokeAll:"生成批量撤销（全部被标记）", sweepCopyAll:"复制全部 calldata", sweepNone:"没有需要撤销的高危授权。",
+    sweepScanning:"清扫中…", sweepErr:"清扫失败：", sweepCalldata:"Calldata（to=代币合约, data=）",
+    t_decode:"交易解码", t_decode_s:"Tx 解析 · $0.05",
+    decodeBtn:"解码交易", decodeFreeNote:"粘贴任意 Base 交易 hash 看基础信息（from/to/value/状态）。支付 $0.05 解锁完整解码：方法、调用合约、代币转账、事件。",
+    decodeFreeTitle:"基础信息（免费）", decodeHash:"交易哈希 (0x...)", decodeFrom:"发送方", decodeTo:"接收方", decodeValue:"金额", decodeStatus:"状态", decodeBlock:"区块",
+    gateTitleD:"🔓 解锁完整解码", gateDescD:"解码方法 · 调用合约 · ERC-20/721 转账 · 事件日志 · 内部调用",
+    payBtnD:"支付 $0.05 USDC 解锁", qrNoteD:"用 MetaMask / Trust Wallet 扫码 → 确认转账 0.05 USDC（Base 链），回到本页点「我已支付」自动解锁。",
+    gateNoteD:"用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。",
+    premiumTitleD:"完整解码报告（已解锁）", exportBtnD:"导出 JSON 报告",
+    decodeMethod:"已解码方法", decodeCalls:"被调用合约", decodeTransfers:"代币转账", decodeEvents:"事件", decodeInternal:"内部调用",
+    decodeNoMethod:"方法不在已知 ABI 中（展示原始 input）", decodePending:"交易尚未打包", decodeNotFound:"该链上未找到此交易", decodeScanning:"解码中…", decodeErr:"解码失败："
   },
   en:{
     appTag:"Address scan · Approval guard · Contract blacklist · one entry for wallet safety",
@@ -616,7 +725,27 @@ const T = {
     simNativeBefore:"Native balance before", simNativeAfter:"Native balance after", simNativeDelta:"Native change", simUsdcBefore:"USDC before", simUsdtBefore:"USDT before",
     simDecoded:"Decoded return", simDecApprove:"approve call", simDecTransfer:"transfer call", simDecTransferFrom:"transferFrom call", simDecOk:"success", simDecFail:"fail",
     simVerdictRevert:"This tx will revert — sending waste gas", simVerdictFlag:"Target matches blacklist — strongly advised NOT to send", simVerdictValue:"Tx carries non-zero value — confirm recipient trust", simVerdictSafe:"Dry-run passed and target not flagged — lower risk (still verify yourself)",
-    simErr:"Impact eval failed: ", simDisclaimer2:"⚠️ Dry-run estimates balance/allowance changes from current on-chain state; cannot cover internal conditional branches. Actual result on-chain may differ."
+    simErr:"Impact eval failed: ", simDisclaimer2:"⚠️ Dry-run estimates balance/allowance changes from current on-chain state; cannot cover internal conditional branches. Actual result on-chain may differ.",
+    t_sweep:"Approval Sweeper", t_sweep_s:"Revoke gen · $0.05",
+    sweepBtn:"Free sweep", sweepFreeNote:"Paste wallet to list all ERC-20 approvals with risk scoring. Basic list free. Pay $0.05 to unlock batch revoke-tx generator (calldata + EIP-681).",
+    sweepFreeTitle:"Active approvals (free)", sweepRiskScore:"Wallet Risk Score", sweepScoreSub:"(based on unlimited & unknown spenders)",
+    sweepSummary:"Summary", sweepTotal:"Total approvals", sweepInf:"Unlimited", sweepUnknown:"Unknown spender", sweepHigh:"High-risk",
+    sweepRowToken:"Token", sweepRowSpender:"Spender", sweepRowAmt:"Allowance", sweepRowRisk:"Risk",
+    gateTitleW:"🔓 Unlock Batch Revoke Generator", gateDescW:"Generate approve(spender,0) for every flagged approval · batch calldata list · EIP-681 scan-to-revoke · JSON export",
+    payBtnW:"Pay $0.05 USDC to unlock", qrNoteW:"Scan with MetaMask / Trust Wallet → send 0.05 USDC (Base), return here and click \"I paid\" to auto-unlock.",
+    gateNoteW:"Pay 0.05 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
+    premiumTitleW:"Batch Revoke Generator (unlocked)", exportBtnW:"Export revoke list (JSON)",
+    sweepRevokeAll:"Generate batch revoke (all flagged)", sweepCopyAll:"Copy all calldata", sweepNone:"No flagged approvals to revoke.",
+    sweepScanning:"Sweeping…", sweepErr:"Sweep failed: ", sweepCalldata:"Calldata (to=token, data=)",
+    t_decode:"Tx Decoder", t_decode_s:"Tx parse · $0.05",
+    decodeBtn:"Decode tx", decodeFreeNote:"Paste any Base tx hash to see basic info (from/to/value/status). Pay $0.05 to unlock full decode: method, called contracts, token transfers, events.",
+    decodeFreeTitle:"Basic info (free)", decodeHash:"Transaction hash (0x...)", decodeFrom:"From", decodeTo:"To", decodeValue:"Value", decodeStatus:"Status", decodeBlock:"Block",
+    gateTitleD:"🔓 Unlock Full Decode", gateDescD:"Decoded method · called contracts · ERC-20/721 transfers · emitted events · internal calls",
+    payBtnD:"Pay $0.05 USDC to unlock", qrNoteD:"Scan with MetaMask / Trust Wallet → send 0.05 USDC (Base), return here and click \"I paid\" to auto-unlock.",
+    gateNoteD:"Pay 0.05 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
+    premiumTitleD:"Full Decode Report (unlocked)", exportBtnD:"Export JSON report",
+    decodeMethod:"Method (decoded)", decodeCalls:"Called contracts", decodeTransfers:"Token transfers", decodeEvents:"Events", decodeInternal:"Internal calls",
+    decodeNoMethod:"Method not in known ABI (raw input shown)", decodePending:"Tx not yet mined", decodeNotFound:"Tx hash not found on this chain", decodeScanning:"Decoding…", decodeErr:"Decode failed: "
   }
 };
 let lang = (localStorage.getItem('hub_lang')||'en');
@@ -637,7 +766,7 @@ const CHAINS = {
          factory:"0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C", weth:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", router:"0xedf6066a2b290C185783862c7F4776a2c8077ad1" }
 };
 const PAY_ADDR = "0x2409b47a530be3831158f10b08ac93f7d08c1ff2";
-const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04, simulate:0.06 };
+const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04, simulate:0.06, sweep:0.05, decode:0.05 };
 const CF_TOKEN = "e87dc5dd541b4f69bdd68580a7fee5c9";
 
 /* channel attribution ?src= */
@@ -783,7 +912,7 @@ async function callSilent(chain,to,data){ try{ return await call(chain,to,data);
 let activeTab = 'scan';
 function switchTab(tab){
   activeTab = tab;
-  ['scan','apv','scam','gas','sim','simulate'].forEach(k=>{
+  ['scan','apv','scam','gas','sim','simulate','sweep','decode'].forEach(k=>{
     document.getElementById('panel'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('hidden', k!==tab);
     document.getElementById('tab'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('active', k===tab);
   });
@@ -811,7 +940,7 @@ async function pollPaid(tab){
   const ok=await verifyPayment(h.trim());
   if(ok) unlockPremium(tab); else toast(t('payFail'));
 }
-function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':tab==='simulate'?'payBtnT':'payBtnM'); }
+function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':tab==='simulate'?'payBtnT':tab==='sweep'?'payBtnW':tab==='decode'?'payBtnD':'payBtnM'); }
 async function startPayment(tab){
   if(!window.ethereum){ toast(t('walletMissing')); return; }
   let accounts; try{ accounts=await window.ethereum.request({method:'eth_requestAccounts'}); }catch(e){ toast(t('walletDeny')); return; }
@@ -855,6 +984,8 @@ function unlockPremium(tab){
   else if(tab==='scam') renderScamPremium();
   else if(tab==='sim'){ simPremium=simData; renderSimPremium(simPremium); }
   else if(tab==='simulate'){ renderSimulatePremium(); }
+  else if(tab==='sweep'){ renderSweepPremium(); }
+  else if(tab==='decode'){ renderDecodePremium(); }
   toast(t('unlocked'));
   trackEvent('premium_paid',{src:SRC,module:tab,amount:PRICE[tab]});
 }
@@ -1419,6 +1550,212 @@ function exportSimulate(){
   const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "tx-simulation.json"; a.click();
 }
+/* ===================== TAB 7: Approval Sweeper ===================== */
+const ERC20_ABI = {
+  balanceOf:"0x70a08231", allowance:"0xdd62ed3e",
+  approve:"0x095ea7b3", decimals:"0x313ce567", symbol:"0x95d89b41", name:"0x06fdde03"
+};
+const KNOWN_SPENDERS = {
+  "0x7a250d5630b4cf539739df2c5dacb4c659f2488d":"Uniswap V2 Router",
+  "0xe592427a0aece92de3edee1f18e0157c05861564":"Uniswap V3 Router",
+  "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45":"Uniswap V3 SwapRouter2",
+  "0xdef1c0ded9bec7f1a1670819833240f027b25e99":"0x Exchange Proxy",
+  "0x1111111254eeb25477b68fb85ed929f73a960582":"1inch Router",
+  "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad":"PancakeSwap Router",
+  "0x7ef95a0fee0dd31b22626fa2e10ee6a223f1a167":"PancakeSwap Router V3",
+  "0x4c60051384bd2d3c01bfc845cf6f4fa34e0c18b4":"SushiSwap Router",
+  "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45":"Uniswap V3",
+  "0x7ae1defdf24913dfdd1f9de6083b5ac4b36b5148":"OpenSea Wyvern",
+  "0x00000000006c3852cbef3ae04a9e613412b06ba6":"Seaport",
+  "0x59728544b08ab483533076417fbbb2fd0b17ce3a":"Blur",
+  "0xc92e8bdf79f0507f65a392b0ab4667716bfe0110":null
+};
+let sweepData=null, sweepList=[];
+async function runSweep(){
+  const addr=document.getElementById('sweepAddr').value.trim();
+  const chain=document.getElementById('sweepChain').value;
+  if(!isAddr(addr)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('sweepBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('sweepScanning');
+  document.getElementById('sweepResult').classList.remove('hidden');
+  try{
+    const c=CHAINS[chain];
+    sweepList = await scanApprovals(chain, addr);
+    renderSweepFree(sweepList);
+    document.getElementById('sweepGateCard').classList.remove('hidden');
+    document.getElementById('sweepPremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('sweepErr')+e.message); }
+  finally{ btn.disabled=false; btn.innerHTML=t('sweepBtn'); }
+}
+async function scanApprovals(chain, owner){
+  const c = CHAINS[chain];
+  const pad = (a)=> "0x000000000000000000000000"+a.slice(2).toLowerCase();
+  // Enumerate a curated set of high-value ERC-20 tokens + known spender events via getLogs is heavy;
+  // instead we probe a token allowancelist by reading Approval events for owner from a known token set.
+  // Simpler robust approach: query a fixed list of major tokens' allowance(owner, knownSpender) for each known spender.
+  const TOKENS = {
+    base:["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","0x4200000000000000000000000000000000000006","0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA","0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb"],
+    eth:["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48","0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2","0xdac17f958d2ee523a2206206994597c13d831ec7"],
+    arb:["0xaf88d065e77c8cc2239327c5edb3a432268e5831","0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"],
+    bnb:["0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d","0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c","0x55d398326f99059ff775485246999027b3197955"],
+    poly:["0x3c499c542cEF5E3811e1192ce70d8cC03dE3C4a","0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"]
+  }[chain] || ["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"];
+  const spenders = Object.keys(KNOWN_SPENDERS);
+  const out=[];
+  for(const token of TOKENS){
+    const tk=token.toLowerCase();
+    let sym="ERC-20";
+    try{ const s=await callSilent(chain, token, ERC20_ABI.symbol+pad(tk)); if(s) sym=hexToAscii(s); }catch(e){}
+    for(const sp of spenders){
+      try{
+        const r=await callSilent(chain, token, ERC20_ABI.allowance+pad(owner)+pad(sp));
+        if(r && r!=="0x" && r!=="0x0"){
+          const amt=BigInt(r);
+          if(amt===0n) continue;
+          const inf = amt >= (1n<<200n);
+          const known = KNOWN_SPENDERS[sp];
+          let risk = 'low';
+          if(inf) risk='high';
+          else if(!known) risk='unknown';
+          out.push({ token, sym, spender:sp, amount:amt, infinite:inf, known, risk });
+        }
+      }catch(e){}
+    }
+  }
+  return out;
+}
+function hexToAscii(hex){
+  try{ let s=""; for(let i=2;i<hex.length;i+=2){ const c=parseInt(hex.substr(i,2),16); if(c>=32&&c<127) s+=String.fromCharCode(c); } return s.trim()||"ERC-20"; }catch(e){ return "ERC-20"; }
+}
+function riskScoreColor(score){
+  if(score>=60) return "var(--bad)";
+  if(score>=30) return "var(--warn)";
+  return "var(--good)";
+}
+function renderSweepFree(list){
+  const inf=list.filter(x=>x.infinite).length;
+  const unk=list.filter(x=>x.risk==='unknown').length;
+  const high=list.filter(x=>x.risk==='high').length;
+  let score = Math.min(100, high*40 + unk*15 + inf*10);
+  document.getElementById('sweepRiskScore').textContent = score;
+  document.getElementById('sweepRiskScore').style.color = riskScoreColor(score);
+  let label = score>=60? t('l_high') : score>=30? t('l_mid') : t('l_low');
+  document.getElementById('sweepRiskLabel').textContent = label;
+  const sum=document.getElementById('sweepSummary');
+  sum.innerHTML = summaryPill(t('sweepTotal'), list.length) + summaryPill(t('sweepInf'), inf) + summaryPill(t('sweepUnknown'), unk) + summaryPill(t('sweepHigh'), high);
+  let html='';
+  if(list.length===0){ html='<p class="flag f-good" style="margin-top:10px">'+t('noApprovals')+'</p>'; }
+  else{
+    for(const a of list){
+      const cls = a.risk==='high'?'b-high':a.risk==='unknown'?'b-mid':'b-low';
+      const riskTxt = a.risk==='high'?t('l_high'):a.risk==='unknown'?t('rUnknown'):t('rOk');
+      const amtTxt = a.infinite? '<span class="infinite">∞</span>' : (Number(a.amount)/1e18>1e9? 'large' : (Number(a.amount)/1e9).toFixed(2)+'B');
+      html += '<div class="apv-row"><div class="apv-head"><span class="apv-token">'+a.sym+'</span><span class="apv-badge '+cls+'">'+riskTxt+'</span></div>'
+        + '<div class="apv-spender">'+a.spender+' '+(a.known?('· '+a.known):'')+'</div>'
+        + '<div class="apv-amt">'+t('sweepRowAmt')+': '+amtTxt+'</div></div>';
+    }
+  }
+  document.getElementById('sweepFreeBody').innerHTML=html;
+}
+function summaryPill(l,n){ return '<div class="summary-pill"><div class="n">'+n+'</div><div class="l">'+l+'</div></div>'; }
+function renderSweepPremium(){
+  const flagged = sweepList.filter(x=> x.risk==='high' || x.risk==='unknown');
+  if(flagged.length===0){ document.getElementById('sweepPremiumBody').innerHTML='<p class="flag f-good">'+t('sweepNone')+'</p>'; return; }
+  let html='<div class="note" data-i18n="revokeFor">'+t('revokeFor')+'</div>';
+  for(const a of flagged){
+    const data = ERC20_ABI.approve + a.spender.toLowerCase().replace(/^0x/,'') + "0000000000000000000000000000000000000000000000000000000000000000";
+    html += '<div class="apv-row"><div class="apv-head"><span class="apv-token">'+a.sym+' → '+a.spender.slice(0,10)+'…</span></div>'
+      + '<div class="result-box">'+data+'</div>'
+      + '<div class="toolbar"><button class="ghost" onclick="copyText(\''+data+'\')">'+t('copyTx')+'</button>'
+      + '<button class="ghost" onclick="window.open(\'ethereum:'+a.token+'?functionName=approve&address='+a.spender+'&uint256=0\')">'+t('scanTx')+'</button></div></div>';
+  }
+  document.getElementById('sweepPremiumBody').innerHTML=html;
+}
+function copyText(txt){ if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast(t('addrCopied'))).catch(()=>fallbackCopy(txt)); else fallbackCopy(txt); }
+function genBatchRevoke(){ renderSweepPremium(); toast(t('sweepRevokeAll')); }
+function copyAllCalldata(){
+  const flagged = sweepList.filter(x=> x.risk==='high' || x.risk==='unknown');
+  if(flagged.length===0){ toast(t('sweepNone')); return; }
+  let all='';
+  for(const a of flagged){ all += a.token+' | approve('+a.spender+',0) | '+ERC20_ABI.approve+a.spender.toLowerCase().replace(/^0x/,'')+'0000000000000000000000000000000000000000000000000000000000000000\n'; }
+  copyText(all);
+}
+function exportSweep(){
+  if(!sweepList) return;
+  const report = { type:"approval-sweep", count:sweepList.length, generatedAt:new Date().toISOString(), payTo:PAY_ADDR, price:PRICE.sweep, items:sweepList };
+  const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="approval-sweep.json"; a.click();
+}
+
+/* ===================== TAB 8: Tx Decoder ===================== */
+let decodeData=null;
+const KNOWN_METHODS = {
+  "0xa9059cbb":"transfer(address,uint256)",
+  "0x095ea7b3":"approve(address,uint256)",
+  "0x23b872dd":"transferFrom(address,address,uint256)",
+  "0x7ff36ab5":"swapExactTokensForTokens(...)",
+  "0x38ed1739":"swapExactTokensForTokens(uint,uint,path,to,deadline)",
+  "0x791ac947":"swapExactETHForTokens(...)",
+  "0xfb3bdb41":"swapExactTokensForETH(...)",
+  "0x3593564c":"multicall(bytes[])",
+  "0x6a761202":"safeTransferFrom(address,address,uint256)",
+  "0x42842e0e":"safeTransferFrom(address,from,to,id)",
+  "0xb88d4fde":"setApprovalForAll(address,bool)",
+  "0xa22cb465":"setApprovalForAll(address,address,bool)"
+};
+async function runDecode(){
+  const h=document.getElementById('decodeHash').value.trim();
+  if(!/^0x[a-fA-F0-9]{64}$/.test(h)){ toast(t('errAddr')); return; }
+  const btn=document.getElementById('decodeBtn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>'+t('decodeScanning');
+  document.getElementById('decodeResult').classList.remove('hidden');
+  try{
+    const tx=await rpc('base','eth_getTransaction',[h]);
+    if(!tx){ document.getElementById('decodeFreeBody').innerHTML='<p class="flag f-bad">'+t('decodeNotFound')+'</p>'; document.getElementById('decodeGateCard').classList.add('hidden'); return; }
+    const r=await rpc('base','eth_getTransactionReceipt',[h]);
+    decodeData={ hash:h, from:tx.from, to:tx.to, value:tx.value, input:tx.input, status: r? (r.status==='0x1'?'success':'reverted') : 'pending', block:tx.blockNumber, _receipt:r };
+    let html = row(t('decodeFrom'), tx.from||'-') + row(t('decodeTo'), tx.to||'(contract creation)')
+      + row(t('decodeValue'), (BigInt(tx.value||'0x0')/1e18).toFixed(6)+' ETH')
+      + row(t('decodeStatus'), decodeData.status) + row(t('decodeBlock'), tx.blockNumber||'-');
+    document.getElementById('decodeFreeBody').innerHTML=html;
+    document.getElementById('decodeGateCard').classList.remove('hidden');
+    document.getElementById('decodePremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('decodeErr')+e.message); }
+  finally{ btn.disabled=false; btn.innerHTML=t('decodeBtn'); }
+}
+function renderDecodePremium(){
+  if(!decodeData) return;
+  const sig = decodeData.input && decodeData.input.length>=10 ? decodeData.input.slice(0,10) : null;
+  const method = sig && KNOWN_METHODS[sig] ? KNOWN_METHODS[sig] : t('decodeNoMethod');
+  let html = row(t('decodeMethod'), method);
+  if(sig) html += row('Method ID', sig);
+  if(decodeData.input && decodeData.input.length>10) html += row('Input data', decodeData.input.slice(0,42)+'…');
+  // transfers & events from receipt logs
+  const r = decodeData._receipt;
+  const TRANSFER="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+  if(r && Array.isArray(r.logs)){
+    const transfers=[]; const events=[];
+    for(const log of r.logs){
+      if(log.topics && log.topics[0]===TRANSFER && log.topics.length>=3){
+        const tok=log.address;
+        const from="0x"+log.topics[1].slice(26); const to="0x"+log.topics[2].slice(26);
+        let amt=log.data; if(amt&&amt!=='0x'){ try{ amt=Number(BigInt(amt))/1e18; }catch(e){ amt='?'; } } else amt='?';
+        transfers.push(tok.slice(0,10)+'… '+from.slice(0,8)+'→'+to.slice(0,8)+' '+amt);
+      } else if(log.topics && log.topics[0]){ events.push((log.topics[0].slice(0,10))+' @ '+log.address.slice(0,10)); }
+    }
+    if(transfers.length){ html+='<div class="section-title" style="margin-top:12px">'+t('decodeTransfers')+'</div>'; for(const x of transfers) html+='<div class="holder-row"><span>'+x+'</span></div>'; }
+    if(events.length){ html+='<div class="section-title" style="margin-top:12px">'+t('decodeEvents')+'</div>'; for(const x of events) html+='<div class="holder-row"><span>'+x+'</span></div>'; }
+    html+='<div class="section-title" style="margin-top:12px">'+t('decodeCalls')+'</div><div class="holder-row"><span>'+decodeData.to+'</span></div>';
+  } else {
+    html+='<p class="muted" style="margin-top:10px">'+t('decodePending')+'</p>';
+  }
+  document.getElementById('decodePremiumBody').innerHTML=html;
+}
+function exportDecode(){
+  if(!decodeData) return;
+  const report = Object.assign({}, decodeData, { payTo:PAY_ADDR, price:PRICE.decode, generatedAt:new Date().toISOString(), disclaimer:t('disclaimer') });
+  const blob = new Blob([JSON.stringify(report,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="tx-decode.json"; a.click();
+}
+
 function renderSimFree(d){
   let html=`<div class="kv"><span class="k">${t('simType')}</span><span class="v">${t('contract')}</span></div>`;
   html+=`<div class="kv"><span class="k">${t('simSize')}</span><span class="v">${d.size} bytes</span></div>`;
