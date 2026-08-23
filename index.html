@@ -608,6 +608,7 @@ const T = {
     simDecoded:"解码返回", simDecApprove:"approve 调用", simDecTransfer:"transfer 调用", simDecTransferFrom:"transferFrom 调用", simDecOk:"成功", simDecFail:"失败",
     simVerdictRevert:"该交易会 revert，发出即失败、白付 gas", simVerdictFlag:"目标合约命中黑名单，强烈建议不要发送", simVerdictValue:"交易附带非零 value，确认收款方可信", simVerdictSafe:"dry-run 通过且目标未标记，风险较低（仍请自行确认）",
     simErr:"影响评估失败：", simDisclaimer2:"⚠️ dry-run 基于当前链上状态估算余额/授权变化，无法覆盖合约内部条件分支；实际结果以链上为准。",
+    errHash:"交易哈希格式不正确（应为 0x + 64 位十六进制）", pasteHash:"粘贴你的 USDC 转账交易哈希（0x…）：",
     t_sweep:"授权清扫", t_sweep_s:"撤销生成 · $0.05",
     sweepBtn:"免费清扫", sweepFreeNote:"粘贴钱包地址，列出全部 ERC-20 授权并给出风险评分。基础列表免费。支付 $0.05 解锁批量撤销交易生成器（calldata + EIP-681）。",
     sweepFreeTitle:"活跃授权列表（免费）", sweepRiskScore:"钱包风险评分", sweepScoreSub:"（基于无限授权与未知被授权方）",
@@ -726,6 +727,7 @@ const T = {
     simDecoded:"Decoded return", simDecApprove:"approve call", simDecTransfer:"transfer call", simDecTransferFrom:"transferFrom call", simDecOk:"success", simDecFail:"fail",
     simVerdictRevert:"This tx will revert — sending waste gas", simVerdictFlag:"Target matches blacklist — strongly advised NOT to send", simVerdictValue:"Tx carries non-zero value — confirm recipient trust", simVerdictSafe:"Dry-run passed and target not flagged — lower risk (still verify yourself)",
     simErr:"Impact eval failed: ", simDisclaimer2:"⚠️ Dry-run estimates balance/allowance changes from current on-chain state; cannot cover internal conditional branches. Actual result on-chain may differ.",
+    errHash:"Invalid transaction hash (expect 0x + 64 hex chars)", pasteHash:"Paste your USDC transfer transaction hash (0x…):",
     t_sweep:"Approval Sweeper", t_sweep_s:"Revoke gen · $0.05",
     sweepBtn:"Free sweep", sweepFreeNote:"Paste wallet to list all ERC-20 approvals with risk scoring. Basic list free. Pay $0.05 to unlock batch revoke-tx generator (calldata + EIP-681).",
     sweepFreeTitle:"Active approvals (free)", sweepRiskScore:"Wallet Risk Score", sweepScoreSub:"(based on unlimited & unknown spenders)",
@@ -754,9 +756,9 @@ function t(k, vars){ let s = (T[lang]&&T[lang][k]!=null)? T[lang][k] : (T.zh[k]!
 
 /* ===================== Chains & constants ===================== */
 const CHAINS = {
-  base:{ name:"Base", rpc:"https://mainnet.base.org", rpc2:"https://base-rpc.publicnode.com", usdc:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer:"https://api.basescan.org/api", scan:"https://basescan.org",
+  base:{ name:"Base", rpc:"https://mainnet.base.org", rpc2:"https://base-rpc.publicnode.com", rpc3:"https://base.publicnode.com", usdc:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", explorer:"https://api.basescan.org/api", scan:"https://basescan.org",
          factory:"0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6", weth:"0x4200000000000000000000000000000000000006", router:"0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24" },
-  eth:{ name:"Ethereum", rpc:"https://eth.llamarpc.com", rpc2:"https://ethereum-rpc.publicnode.com", usdc:"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer:"https://api.etherscan.io/api", scan:"https://etherscan.io",
+  eth:{ name:"Ethereum", rpc:"https://eth.llamarpc.com", rpc2:"https://ethereum-rpc.publicnode.com", rpc3:"https://cloudflare-eth.com", usdc:"0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", explorer:"https://api.etherscan.io/api", scan:"https://etherscan.io",
         factory:"0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f", weth:"0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", router:"0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D" },
   arb:{ name:"Arbitrum", rpc:"https://arb1.arbitrum.io/rpc", rpc2:"https://arbitrum-rpc.publicnode.com", usdc:"0xaf88d065e77c8cc2239327c5edb3a432268e5831", explorer:"https://api.arbiscan.io/api", scan:"https://arbiscan.io",
         factory:"0xf1D7CC64Fb4452F05c498126312eBE29f30Fbcf9", weth:"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", router:"0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24" },
@@ -898,12 +900,22 @@ function padAddr(a){ return "000000000000000000000000"+a.toLowerCase().replace(/
 function fmtUSDC(hex){ return (Number(BigInt(hex))/1e6).toFixed(6); }
 function hexToAscii(hex){ if(!hex||hex==='0x') return ''; let s=''; const h=hex.slice(2); for(let i=0;i+2<=h.length;i+=2){ const c=parseInt(h.substr(i,2),16); if(c===0) break; s+=String.fromCharCode(c); } return s; }
 async function rpc(chain, method, params){
-  const c = CHAINS[chain]; const endpoints=[c.rpc]; if(c.rpc2) endpoints.push(c.rpc2); let lastErr;
+  const c = CHAINS[chain] || CHAINS.base;
+  const endpoints=[c.rpc, c.rpc2, c.rpc3].filter(Boolean);
+  let lastErr;
   for(const url of endpoints){
-    try{ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})});
-      const j=await r.json(); if(j.error) throw new Error(j.error.message); return j.result;
-    }catch(e){ lastErr=e; }
-  } throw lastErr;
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 8000);
+    try{
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({jsonrpc:'2.0',id:1,method,params}), signal:ctrl.signal});
+      clearTimeout(timer);
+      const j = await r.json();
+      if(j.error) throw new Error(j.error.message||'rpc error');
+      return j.result;
+    }catch(e){ lastErr=e; clearTimeout(timer); }
+  }
+  throw lastErr || new Error('all RPC endpoints failed');
 }
 async function call(chain,to,data){ return await rpc(chain,'eth_call',[{to,data},'latest']); }
 async function callSilent(chain,to,data){ try{ return await call(chain,to,data); }catch(e){ return null; } }
@@ -926,8 +938,9 @@ function buildPaymentURI(tab){
 function showQr(tab){
   const box=document.getElementById(tab+'QrBox'); box.classList.toggle('hidden');
   if(box.classList.contains('hidden')) return;
-  const uri=encodeURIComponent(buildPaymentURI(tab));
-  document.getElementById(tab+'QrImg').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uri}" width="200" height="200" alt="pay qr" />`;
+  const uri=buildPaymentURI(tab);
+  const enc=encodeURIComponent(uri);
+  document.getElementById(tab+'QrImg').innerHTML=`<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${enc}" width="200" height="200" alt="pay qr" onerror="this.style.display='none';document.getElementById('${tab}QrFallback').style.display='block';" /><div id="${tab}QrFallback" style="display:none" class="qrfallback">QR service unavailable. Copy this URI manually:<br><code style="word-break:break-all">${uri}</code></div>`;
 }
 function copyRecv(){
   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(PAY_ADDR).then(()=>toast(t('addrCopied'))).catch(()=>fallbackCopy(PAY_ADDR));
@@ -935,9 +948,9 @@ function copyRecv(){
 }
 function fallbackCopy(text){ const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy'); toast(t('addrCopied'));}catch(e){toast(text);} document.body.removeChild(ta); }
 async function pollPaid(tab){
-  const h=prompt("Paste your USDC transfer transaction hash (0x...):","");
-  if(!h||!/^0x[a-fA-F0-9]{64}$/.test(h.trim())){ toast(t('errAddr')); return; }
-  const ok=await verifyPayment(h.trim());
+  const h=prompt(t('pasteHash'),"");
+  if(!h||!/^0x[a-fA-F0-9]{64}$/.test(h.trim())){ toast(t('errHash')); return; }
+  const ok=await verifyPayment(h.trim(), tab);
   if(ok) unlockPremium(tab); else toast(t('payFail'));
 }
 function payBtnLabel(tab){ return t(tab==='scan'?'payBtnS':tab==='apv'?'payBtnA':tab==='scam'?'payBtnX':tab==='simulate'?'payBtnT':tab==='sweep'?'payBtnW':tab==='decode'?'payBtnD':'payBtnM'); }
@@ -955,10 +968,11 @@ async function startPayment(tab){
   const ok=await verifyPayment(txHash);
   if(ok) unlockPremium(tab); else { btn.disabled=false; btn.innerHTML=payBtnLabel(tab); toast(t('payFail')); }
 }
-async function verifyPayment(txHash){
+async function verifyPayment(txHash, tab){
+  tab = tab || activeTab;
   const toPadded="0x000000000000000000000000"+PAY_ADDR.slice(2).toLowerCase();
   const usdc=CHAINS.base.usdc.toLowerCase();
-  const need=PRICE[activeTab]||0.02;
+  const need=PRICE[tab]||0.02;
   for(let i=0;i<12;i++){
     try{
       const r=await rpc('base','eth_getTransactionReceipt',[txHash]);
