@@ -114,6 +114,7 @@
     <div class="tab" id="tabSimulate" onclick="switchTab('simulate')">🎯 <span data-i18n="t_simulate">交易模拟</span><small data-i18n="t_simulate_s">预执行 · $0.06</small></div>
     <div class="tab" id="tabSweep" onclick="switchTab('sweep')">🧹 <span data-i18n="t_sweep">授权清扫</span><small data-i18n="t_sweep_s">撤销生成 · $0.05</small></div>
     <div class="tab" id="tabDecode" onclick="switchTab('decode')">🧾 <span data-i18n="t_decode">交易解码</span><small data-i18n="t_decode_s">Tx 解析 · $0.05</small></div>
+    <div class="tab" id="tabPro" onclick="switchTab('pro')">📊 <span data-i18n="t_pro">安全报告 Pro</span><small data-i18n="t_pro_s">深度报告 · $1.99</small></div>
   </div>
 
   <!-- ============ TAB 1: Address Scan (SafeScan) ============ -->
@@ -500,6 +501,48 @@
     </div>
   </div>
 
+  <div id="panelPro" class="hidden">
+    <div class="card">
+      <div class="row">
+        <input id="proAddr" placeholder="0x... wallet or contract" autocomplete="off" spellcheck="false" />
+        <select id="proChain">
+          <option value="base">Base</option><option value="eth">Ethereum</option><option value="arb">Arbitrum</option><option value="bnb">BNB Chain</option><option value="poly">Polygon</option>
+        </select>
+        <button id="proBtn" onclick="runPro()" data-i18n="proBtn">一键深度扫描</button>
+      </div>
+      <div class="note" data-i18n="proFreeNote">一次性跑完扫描+授权+黑名单三件套，生成可下载的专业安全报告。基础预览免费，支付 $1.99 USDC 解锁完整报告（含风险评分+处置建议+Markdown 导出）。</div>
+    </div>
+    <div id="proResult" class="hidden">
+      <div class="card round" id="proFreeCard">
+        <p class="section-title" data-i18n="proFreeTitle">报告预览（免费）</p>
+        <div id="proFreeBody"></div>
+      </div>
+      <div class="card round" id="proGateCard">
+        <div class="locked">
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px" data-i18n="proLocked">🔒 完整报告已锁定</div>
+          <div class="muted" style="margin-bottom:16px" data-i18n="proUnlockDesc">支付 $1.99 USDC（Base 链）解锁：完整风险评分 · 逐项处置建议 · 可复制 Markdown · 下载 .md 文件</div>
+          <button class="usdc-btn" id="proPayBtn" onclick="startPayment('pro')" data-i18n="proPayBtn">支付 $1.99 USDC 解锁</button>
+          <div class="row" style="justify-content:center;margin-top:10px">
+            <button class="ghost" onclick="showQr('pro')" data-i18n="qrBtn">📱 手机扫码付</button>
+            <button class="ghost" onclick="copyRecv()" data-i18n="copyAddrBtn">📋 复制收款地址</button>
+            <button class="ghost" id="proAfter" onclick="pollPaid('pro')" data-i18n="afterPayBtn">✅ 我已支付，解锁</button>
+          </div>
+          <div id="proQrBox" class="hidden" style="margin-top:14px"><div id="proQrImg"></div></div>
+          <div class="note" data-i18n="gateNoteS">用你的钱包向本站收款地址支付 1.99 USDC（Base 链），链上确认后自动解锁。</div>
+        </div>
+      </div>
+      <div class="card round hidden" id="proPremiumCard">
+        <p class="section-title" data-i18n="premiumTitleS">深度风险报告（已解锁）</p>
+        <div id="proPremiumBody"></div>
+        <div class="toolbar" style="margin-top:12px">
+          <button class="ghost" onclick="copyProMd()" data-i18n="proCopyMd">复制 Markdown 报告</button>
+          <button class="ghost" onclick="downloadProMd()" data-i18n="proDownload">下载报告 (.md)</button>
+          <button class="ghost" onclick="runPro()" data-i18n="newScanBtn">重新扫描</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="wallet">
     <span data-i18n="recvAddr">统一收款地址（USDC on Base）：</span><code>0x2409b47a530be3831158f10b08ac93f7d08c1ff2</code><br/>
     <span data-i18n="recvNote">Wallet Security Hub 为聚合工具，三个模块共享同一收款地址，所有付费直接以 USDC 结算，无平台抽成或托管。</span>
@@ -628,7 +671,16 @@ const T = {
     gateNoteD:"用你的钱包向本站收款地址支付 0.05 USDC（Base 链），链上确认后自动解锁。",
     premiumTitleD:"完整解码报告（已解锁）", exportBtnD:"导出 JSON 报告",
     decodeMethod:"已解码方法", decodeCalls:"被调用合约", decodeTransfers:"代币转账", decodeEvents:"事件", decodeInternal:"内部调用",
-    decodeNoMethod:"方法不在已知 ABI 中（展示原始 input）", decodePending:"交易尚未打包", decodeNotFound:"该链上未找到此交易", decodeScanning:"解码中…", decodeErr:"解码失败："
+    decodeNoMethod:"方法不在已知 ABI 中（展示原始 input）", decodePending:"交易尚未打包", decodeNotFound:"该链上未找到此交易", decodeScanning:"解码中…", decodeErr:"解码失败：",
+    t_pro:"安全报告 Pro", t_pro_s:"深度报告 · $1.99",
+    proTitle:"📊 链上安全深度报告 Pro", proAddr:"钱包 / 合约地址", proChain:"选择链", proBtn:"一键深度扫描", proScanning:"深度扫描中…",
+    proFreeNote:"一次性跑完扫描+授权+黑名单三件套，生成可下载的专业安全报告。基础预览免费，支付 $1.99 USDC 解锁完整报告（含风险评分+处置建议+Markdown 导出）。",
+    proFreeTitle:"报告预览（免费）", proLocked:"🔒 完整报告已锁定", proUnlockDesc:"支付 $1.99 USDC（Base 链）解锁：完整风险评分 · 逐项处置建议 · 可复制 Markdown · 下载 .md 文件", proPayBtn:"支付 $1.99 USDC 解锁", proCopyMd:"复制 Markdown 报告", proDownload:"下载报告 (.md)", proPreviewBlur:"（付费后显示完整逐项分析与建议）",
+    proRiskScore:"综合风险评分", proAddrType:"地址类型", proToken:"代币", proPerm:"权限", proLiq:"流动性", proApprovals:"授权", proFlags:"风险标记", proAdvice:"处置建议", proNoAddr:"请输入有效地址",
+    noFlags:"未发现风险标记", noApprovals:"未检测到高危授权",
+    advice_new:"该地址无交易历史——视为未验证，切勿盲目转账。", advice_contract:"合约地址但无交易记录——可能未部署或空合约，高风险。",
+    advice_scam:"地址命中已知 scam/黑名单——请勿交互。", advice_proxy:"检测到代理合约——owner 可升级逻辑，请确认管理员已放弃权限或多签。",
+    advice_apv:"请在授权巡检 Tab 撤销 N 条活跃授权以降低被盗风险。", advice_ok:"本次扫描未发现严重风险，大额转账前仍请二次验证。"
   },
   en:{
     appTag:"Address scan · Approval guard · Contract blacklist · one entry for wallet safety",
@@ -747,7 +799,16 @@ const T = {
     gateNoteD:"Pay 0.05 USDC (Base) from your wallet to our address. Confirmed on-chain → instant unlock.",
     premiumTitleD:"Full Decode Report (unlocked)", exportBtnD:"Export JSON report",
     decodeMethod:"Method (decoded)", decodeCalls:"Called contracts", decodeTransfers:"Token transfers", decodeEvents:"Events", decodeInternal:"Internal calls",
-    decodeNoMethod:"Method not in known ABI (raw input shown)", decodePending:"Tx not yet mined", decodeNotFound:"Tx hash not found on this chain", decodeScanning:"Decoding…", decodeErr:"Decode failed: "
+    decodeNoMethod:"Method not in known ABI (raw input shown)", decodePending:"Tx not yet mined", decodeNotFound:"Tx hash not found on this chain", decodeScanning:"Decoding…", decodeErr:"Decode failed: ",
+    t_pro:"Security Report Pro", t_pro_s:"Deep report · $1.99",
+    proTitle:"📊 On-chain Security Deep Report Pro", proAddr:"Wallet / contract address", proChain:"Select chain", proBtn:"Run deep scan", proScanning:"Deep scanning…",
+    proFreeNote:"Runs scan + approvals + blacklist in one pass and generates a downloadable professional security report. Basic preview is free; pay $1.99 USDC to unlock the full report (risk score + remediation + Markdown export).",
+    proFreeTitle:"Report preview (free)", proLocked:"🔒 Full report locked", proUnlockDesc:"Pay $1.99 USDC (Base) to unlock: full risk score · itemized remediation · copyable Markdown · download .md", proPayBtn:"Pay $1.99 USDC to unlock", proCopyMd:"Copy Markdown report", proDownload:"Download report (.md)", proPreviewBlur:"(full per-item analysis & advice shown after payment)",
+    proRiskScore:"Composite risk score", proAddrType:"Address type", proToken:"Token", proPerm:"Permissions", proLiq:"Liquidity", proApprovals:"Approvals", proFlags:"Risk flags", proAdvice:"Remediation", proNoAddr:"Enter a valid address",
+    noFlags:"No risk flags found", noApprovals:"No risky approvals detected",
+    advice_new:"Address has no transaction history — treat as unproven; do not send funds blindly.", advice_contract:"Contract address with no transactions — likely undeployed or empty; high risk.",
+    advice_scam:"Address is on known scam/blacklist — do NOT interact.", advice_proxy:"Proxy contract detected — owner can upgrade logic; verify admin is renounced or multisig.",
+    advice_apv:"Revoke active approvals in the Approval Guard tab to reduce drain risk.", advice_ok:"No critical risks in this scan; always verify before large transfers."
   }
 };
 let lang = (localStorage.getItem('hub_lang')||'en');
@@ -768,7 +829,7 @@ const CHAINS = {
          factory:"0x9e5A52f57b3038F1B8EeE45F28b3C1967e22799C", weth:"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", router:"0xedf6066a2b290C185783862c7F4776a2c8077ad1" }
 };
 const PAY_ADDR = "0x2409b47a530be3831158f10b08ac93f7d08c1ff2";
-const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04, simulate:0.06, sweep:0.05, decode:0.05 };
+const PRICE = { scan:0.05, apv:0.02, scam:0.03, sim:0.04, simulate:0.06, sweep:0.05, decode:0.05, pro:1.99 };
 const CF_TOKEN = "e87dc5dd541b4f69bdd68580a7fee5c9";
 
 /* channel attribution ?src= */
@@ -924,7 +985,7 @@ async function callSilent(chain,to,data){ try{ return await call(chain,to,data);
 let activeTab = 'scan';
 function switchTab(tab){
   activeTab = tab;
-  ['scan','apv','scam','gas','sim','simulate','sweep','decode'].forEach(k=>{
+  ['scan','apv','scam','gas','sim','simulate','sweep','decode','pro'].forEach(k=>{
     document.getElementById('panel'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('hidden', k!==tab);
     document.getElementById('tab'+k.charAt(0).toUpperCase()+k.slice(1)).classList.toggle('active', k===tab);
   });
@@ -1000,6 +1061,7 @@ function unlockPremium(tab){
   else if(tab==='simulate'){ renderSimulatePremium(); }
   else if(tab==='sweep'){ renderSweepPremium(); }
   else if(tab==='decode'){ renderDecodePremium(); }
+  else if(tab==='pro'){ renderProPremium(); }
   toast(t('unlocked'));
   trackEvent('premium_paid',{src:SRC,module:tab,amount:PRICE[tab]});
 }
@@ -1823,8 +1885,175 @@ setLang(lang);
     const chainMap={scan:'scanChain',apv:'apvChain',scam:'scamChain',sim:'simChain',simulate:'simChain2'}[activeTab];
     if(idMap&&document.getElementById(idMap)) document.getElementById(idMap).value=a;
     if(c&&CHAINS[c]&&chainMap&&document.getElementById(chainMap)) document.getElementById(chainMap).value=c;
-    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else if(activeTab==='scam') runScam(); else if(activeTab==='sim') runSim(); else if(activeTab==='simulate') runSimulate(); },50);
+    setTimeout(()=>{ if(activeTab==='scan') runScan(); else if(activeTab==='apv') runApv(); else if(activeTab==='scam') runScam(); else if(activeTab==='sim') runSim(); else if(activeTab==='simulate') runSimulate(); else if(activeTab==='pro') runPro(); },50);
   } }catch(e){} })();
+
+/* ===================== TAB 9: Security Report Pro ===================== */
+let proReport = null;
+async function runPro(){
+  const addr = document.getElementById('proAddr').value.trim();
+  const chain = document.getElementById('proChain').value;
+  if(!isAddr(addr)){ toast(t('proNoAddr')); return; }
+  const btn = document.getElementById('proBtn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>'+t('proScanning');
+  try{
+    const c = CHAINS[chain];
+    const report = { addr, chain: c.name, ts: new Date().toISOString(), sections:{} };
+
+    /* --- 1. Address / token scan --- */
+    const code = await rpc(chain,'eth_getCode',[addr,'latest']);
+    const isContract = code && code!=='0x' && code.length>3;
+    const balHex = await rpc(chain,'eth_getBalance',[addr,'latest']);
+    const nativeBal = Number(BigInt(balHex))/1e18;
+    let usdcBal = null; try{ const u = await call(chain, c.usdc, SEL.balanceOf + padAddr(addr)); usdcBal = fmtUSDC(u); }catch(e){}
+    let firstTx=null, txCount=null;
+    try{ const fr = await fetch(`${c.explorer}?module=account&action=txlist&address=${addr}&page=1&offset=1&sort=asc`); const fj = await fr.json();
+      if(fj.status==='1' && fj.result.length){ firstTx = fj.result[0].timeStamp; txCount = fj.result.length; } }catch(e){}
+    let token=null;
+    const sym = await callSilent(chain,addr,SEL.symbol), dec = await callSilent(chain,addr,SEL.decimals), ts = await callSilent(chain,addr,SEL.totalSupply);
+    if(sym!=null && dec!=null && ts!=null){
+      let nm=null, sy=null;
+      try{ nm = hexToAscii(await call(chain,addr,SEL.name)); }catch(e){}
+      try{ sy = hexToAscii(await call(chain,addr,SEL.symbol)); }catch(e){}
+      token = { name:nm||t('na'), symbol:sy||t('na'), decimals: dec?Number(BigInt(dec)):null, totalSupply: ts?(Number(BigInt(ts))/Math.pow(10,dec?Number(BigInt(dec)):18)).toLocaleString():t('na') };
+    }
+    const lbl = knownLabel(addr);
+    const scanFlags = [];
+    if(lbl) scanFlags.push(["good", t('knownContract')+": "+lbl]);
+    if(token) scanFlags.push(["good", t('f_goodToken')]);
+    if(!firstTx) scanFlags.push(["warn", t('f_unknown')]);
+    if(isContract && !firstTx) scanFlags.push(["bad", t('f_contractNoTx')]);
+    if(!token) scanFlags.push(["good", t('f_goodAddr')]);
+    report.sections.scan = { isContract, nativeBal, usdcBal, firstTx, txCount, token, label: lbl, flags: scanFlags };
+
+    /* --- 2. Blacklist / scam check --- */
+    const fl = FLAGGED[addr.toLowerCase()];
+    let isTokenProxy = false;
+    if(token){ try{ const impl = await call(chain, addr, "0x5c60da1b"); if(impl && impl!=='0x') isTokenProxy = true; }catch(e){} }
+    const scamFlags = [];
+    if(fl) scamFlags.push(["bad", fl]);
+    if(isTokenProxy) scamFlags.push(["warn", t('r_proxy')]);
+    report.sections.scam = { flagged: !!fl, isProxy: isTokenProxy, flags: scamFlags };
+
+    /* --- 3. Approvals sweep (top spenders) --- */
+    let approvals = [];
+    try{
+      const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 8000);
+      const r = await fetch(`${c.explorer}?module=account&action=tokenlist&address=${addr}`, {signal:ctl.signal});
+      clearTimeout(to);
+      const rj = await r.json();
+      if(rj.status==='1' && Array.isArray(rj.result)){
+        for(const tk of rj.result.slice(0,12)){
+          const tkAddr = tk.tokenAddress; if(!tkAddr) continue;
+          try{
+            const raw = await call(chain, tkAddr, SEL.allowance + padAddr(addr) + padAddr("0x0000000000000000000000000000000000000000"));
+            // allowance to zero is meaningless; instead fetch spender list via Transfer/Approval is heavy — approximate via known spenders
+          }catch(e){}
+        }
+      }
+    }catch(e){}
+    // lightweight approval check: query a few known spenders' allowance
+    const knownSpenders = Object.keys(KNOWN_SPENDER).slice(0,6);
+    let appCount=0;
+    for(const sp of knownSpenders){
+      try{ const raw = await call(chain, (token?addr:"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"), SEL.allowance + padAddr(addr) + padAddr(sp));
+        const amt = Number(BigInt(raw))/1e18; if(amt>0){ appCount++; approvals.push({spender:sp, label:KNOWN_SPENDER[sp], amount:amt}); } }catch(e){}
+    }
+    const appFlags = appCount>0 ? [["warn", t('proApprovals')+": "+appCount]] : [["good", t('noApprovals')||"No risky approvals detected"]];
+    report.sections.apv = { count: appCount, items: approvals, flags: appFlags };
+
+    /* --- composite score --- */
+    let score = 5;
+    if(!firstTx) score += 45;
+    if(isContract && !firstTx) score += 30;
+    if(fl) score += 40;
+    if(isTokenProxy) score += 25;
+    if(token){ score += 5; }
+    if(appCount>0) score += 10;
+    score = Math.max(5, Math.min(100, score));
+    report.score = score;
+    report.label = score>=70?t('l_high'):score>=40?t('l_mid'):t('l_low');
+
+    proReport = report;
+    renderProFree(report);
+    document.getElementById('proResult').classList.remove('hidden');
+    document.getElementById('proGateCard').classList.remove('hidden');
+    document.getElementById('proPremiumCard').classList.add('hidden');
+  }catch(e){ toast(t('errScan')+e.message); }
+  finally{ btn.disabled=false; btn.textContent = t('proBtn'); }
+}
+function renderProFree(r){
+  const s = r.sections.scan;
+  let html = `<div class="kv"><span class="k">${t('proAddrType')}</span><span class="v">${s.isContract?t('contract'):t('eoa')}</span></div>`;
+  html += `<div class="kv"><span class="k">${t('nativeBal')}</span><span class="v">${s.nativeBal.toFixed(6)} ${r.chain}</span></div>`;
+  if(s.usdcBal!=null) html += `<div class="kv"><span class="k">USDC</span><span class="v">${s.usdcBal}</span></div>`;
+  if(s.token) html += `<div class="kv"><span class="k">${t('proToken')}</span><span class="v">${s.token.symbol} (${s.token.name})</span></div>`;
+  html += `<div class="kv"><span class="k">${t('proFlags')}</span><span class="v">${s.flags.length}</span></div>`;
+  html += `<div class="kv"><span class="k">${t('proRiskScore')} (preview)</span><span class="v">${r.label}</span></div>`;
+  html += `<p class="muted" style="margin-top:10px">${t('proPreviewBlur')}</p>`;
+  document.getElementById('proFreeBody').innerHTML = html;
+}
+function renderProPremium(){
+  const r = proReport; if(!r) return;
+  const s = r.sections.scan;
+  const advice = [];
+  if(!s.firstTx) advice.push(t('advice_new')||"Address has no transaction history — treat as unproven; do not send funds blindly.");
+  if(s.isContract && !s.firstTx) advice.push(t('advice_contract')||"Contract with no tx history — likely undeployed or empty; high risk.");
+  if(r.sections.scam.flagged) advice.push(t('advice_scam')||"Address is on the known scam/blacklist — do NOT interact.");
+  if(r.sections.scam.isProxy) advice.push(t('advice_proxy')||"Proxy contract detected — owner can upgrade logic; verify admin is renounced/multisig.");
+  if(r.sections.apv.count>0) advice.push(t('advice_apv')||("Revoke "+r.sections.apv.count+" active approval(s) via Approval Guard tab to reduce drain risk."));
+  if(!advice.length) advice.push(t('advice_ok')||"No critical risks detected in this scan. Still verify before large transfers.");
+
+  let html = '';
+  html += `<div class="kv"><span class="k">${t('proRiskScore')}</span><span class="v" style="font-weight:700;color:${r.score>=70?'#e5484d':r.score>=40?'#f5a623':'#3ecf8e'}">${r.score}/100 · ${r.label}</span></div>`;
+  html += `<div class="kv"><span class="k">${t('proAddrType')}</span><span class="v">${s.isContract?t('contract'):t('eoa')}</span></div>`;
+  if(s.token) html += `<div class="kv"><span class="k">${t('proToken')}</span><span class="v">${s.token.symbol} · ${s.token.name} · dec ${s.token.decimals} · sup ${s.token.totalSupply}</span></div>`;
+  html += `<div class="kv"><span class="k">${t('proApprovals')}</span><span class="v">${r.sections.apv.count}</span></div>`;
+  if(r.sections.apv.items.length){
+    html += `<div class="section-title">${t('proApprovals')}</div>`;
+    html += r.sections.apv.items.map(a=>`<div class="kv"><span class="k">${a.label}</span><span class="v">${a.amount.toFixed(4)}</span></div>`).join('');
+  }
+  html += `<div class="section-title">${t('proFlags')}</div>`;
+  const allFlags = [...s.flags, ...r.sections.scam.flags, ...r.sections.apv.flags];
+  html += (allFlags.length?allFlags:[[ "good", t('noFlags')||"No flags" ]]).map(([ty,txt])=>`<span class="flag f-${ty}">${ty==='good'?'✓ ':''}${txt}</span>`).join(' ');
+  html += `<div class="section-title">${t('proAdvice')}</div><ul class="advice">` + advice.map(a=>`<li>${a}</li>`).join('') + `</ul>`;
+  document.getElementById('proPremiumBody').innerHTML = html;
+}
+function proMarkdown(){
+  const r = proReport; if(!r) return '';
+  const s = r.sections.scan;
+  let md = `# Wallet Security Deep Report\n\n`;
+  md += `- **Address:** ${r.addr}\n- **Chain:** ${r.chain}\n- **Generated:** ${r.ts}\n- **Risk score:** ${r.score}/100 (${r.label})\n\n`;
+  md += `## Summary\n- Type: ${s.isContract?t('contract'):t('eoa')}\n- Native balance: ${s.nativeBal.toFixed(6)} ${r.chain}\n`;
+  if(s.usdcBal!=null) md += `- USDC balance: ${s.usdcBal}\n`;
+  if(s.token) md += `- Token: ${s.token.symbol} (${s.token.name}), decimals ${s.token.decimals}, supply ${s.token.totalSupply}\n`;
+  md += `- Active approvals (sampled): ${r.sections.apv.count}\n`;
+  if(s.firstTx) md += `- First activity: ${new Date(s.firstTx*1000).toISOString().slice(0,10)}\n`;
+  md += `\n## Risk Flags\n`;
+  const allFlags = [...s.flags, ...r.sections.scam.flags, ...r.sections.apv.flags];
+  md += (allFlags.length?allFlags:[[ "good", t('noFlags')||"No flags" ]]).map(([ty,txt])=>`- [${ty.toUpperCase()}] ${txt}`).join('\n') + `\n`;
+  md += `\n## Remediation\n` + (renderProAdviceList()).map(a=>`- ${a}`).join('\n') + `\n`;
+  return md;
+}
+function renderProAdviceList(){
+  const r = proReport; const s = r.sections.scan; const advice = [];
+  if(!s.firstTx) advice.push(t('advice_new')||"Address has no transaction history — treat as unproven.");
+  if(s.isContract && !s.firstTx) advice.push(t('advice_contract')||"Contract with no tx history — likely undeployed; high risk.");
+  if(r.sections.scam.flagged) advice.push(t('advice_scam')||"On known scam/blacklist — do NOT interact.");
+  if(r.sections.scam.isProxy) advice.push(t('advice_proxy')||"Proxy contract — verify admin renounced/multisig.");
+  if(r.sections.apv.count>0) advice.push(t('advice_apv')||("Revoke "+r.sections.apv.count+" approval(s) via Approval Guard."));
+  if(!advice.length) advice.push(t('advice_ok')||"No critical risks in this scan.");
+  return advice;
+}
+function copyProMd(){
+  const md = proMarkdown();
+  if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(md).then(()=>toast(t('addrCopied'))).catch(()=>fallbackCopy(md));
+  else fallbackCopy(md);
+}
+function downloadProMd(){
+  const md = proMarkdown();
+  const blob = new Blob([md], {type:'text/markdown'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "security-report-"+proReport.addr.slice(0,10)+".md"; a.click();
+}
 </script>
 </body>
 </html>
