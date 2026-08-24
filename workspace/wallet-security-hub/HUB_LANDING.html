@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wallet Security Hub — 9 On-Chain Tools, Pay-as-You-Go in USDC</title>
+<style>
+  :root { --bg:#0b0e14; --card:#141925; --fg:#e6e9ef; --mut:#9aa4b2; --acc:#4f8cff; --ok:#3ecf8e; --warn:#ffb454; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:40px 20px 24px; text-align:center; border-bottom:1px solid #1f2633; }
+  h1 { margin:0 0 10px; font-size:30px; letter-spacing:-.5px; }
+  .tag { color:var(--acc); font-weight:600; }
+  .sub { color:var(--mut); font-size:15px; max-width:640px; margin:0 auto; }
+  .cta { display:inline-block; margin-top:22px; background:var(--ok); color:#06281c; text-decoration:none; font-weight:700; padding:13px 28px; border-radius:10px; font-size:16px; }
+  .cta:active { transform:translateY(1px); }
+  main { max-width:920px; margin:0 auto; padding:28px 20px 60px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; margin:20px 0; }
+  .mod { background:var(--card); border:1px solid #232b3a; border-radius:12px; padding:16px; }
+  .mod h3 { margin:0 0 6px; font-size:16px; color:var(--acc); }
+  .mod .price { color:var(--ok); font-weight:600; font-size:14px; }
+  .mod p { margin:6px 0 0; color:var(--mut); font-size:13px; }
+  .why { background:var(--card); border:1px solid #232b3a; border-radius:12px; padding:20px; margin:24px 0; }
+  .why h2 { margin:0 0 10px; font-size:19px; color:var(--warn); }
+  .why ul { margin:0; padding-left:20px; color:var(--mut); }
+  .why li { margin:6px 0; }
+  .pay { background:#0e1320; border:1px solid #232b3a; border-radius:12px; padding:18px; text-align:center; }
+  .pay .addr { font:13px/1.5 ui-monospace,Menlo,Consolas,monospace; color:var(--ok); word-break:break-all; margin:8px 0; }
+  footer { text-align:center; color:var(--mut); font-size:13px; padding:20px; border-top:1px solid #1f2633; }
+  a.link { color:var(--ok); }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔐 Wallet Security Hub</h1>
+  <div class="sub"><span class="tag">9 on-chain security tools</span> in one page. Runs 100% client-side against public RPC — <b>no wallet connection, no signup, no KYC</b>. Pay only for what you use, in USDC on Base, verified on-chain.</div>
+  <a class="cta" href="https://foxxx009.github.io/wallet-security-hub/" target="_blank" rel="noopener">▶ Open the Hub (free preview)</a>
+</header>
+
+<main>
+  <div class="grid">
+    <div class="mod"><h3>🔍 SafeScan</h3><div class="price">$0.05</div><p>Address &amp; contract risk scan — owner, bytecode, honeypot traits.</p></div>
+    <div class="mod"><h3>🛡️ Approval Guard</h3><div class="price">$0.02</div><p>List &amp; revoke dangerous ERC-20 / ERC-721 approvals.</p></div>
+    <div class="mod"><h3>⚫ Blacklist Check</h3><div class="price">$0.03</div><p>Match a token against known scam / drainer traits.</p></div>
+    <div class="mod"><h3>⛽ Gas Estimator</h3><div class="price">Free</div><p>Live gas + tx pre-check before you broadcast.</p></div>
+    <div class="mod"><h3>🔬 Bytecode Similarity</h3><div class="price">$0.04</div><p>Compare contract code to malicious templates.</p></div>
+    <div class="mod"><h3>🎯 Tx Simulate</h3><div class="price">$0.06</div><p>Dry-run any unsigned tx — see reverts &amp; post-state.</p></div>
+    <div class="mod"><h3>🧹 Sweep Check</h3><div class="price">$0.03</div><p>Detect tokens/approvals a sweeper could exploit.</p></div>
+    <div class="mod"><h3>📡 Decode Call</h3><div class="price">$0.03</div><p>Human-readable decode of any calldata / tx input.</p></div>
+    <div class="mod"><h3>📊 Security Report Pro</h3><div class="price">$1.99</div><p>Full 3-in-1 deep report (scan+approvals+blacklist) with risk score &amp; fix advice.</p></div>
+  </div>
+
+  <div class="why">
+    <h2>Why it's different</h2>
+    <ul>
+      <li><b>Zero backend.</b> Every check runs in your browser against public RPC nodes. Your keys never leave the page.</li>
+      <li><b>No wallet connection required</b> to preview. You only sign a USDC transfer when you choose to unlock a tool.</li>
+      <li><b>On-chain verified payments.</b> Each unlock is a direct USDC (Base) transfer; the page checks the Transfer receipt before unlocking — no escrow, no middleman.</li>
+      <li><b>Receiver pays no gas.</b> Funds land at the recipient address with zero gas cost to them.</li>
+      <li><b>Transparent pricing.</b> Every module shows its price up front. No subscriptions, no tiers.</li>
+    </ul>
+  </div>
+
+  <div class="pay">
+    <h2 style="margin:0 0 4px;font-size:18px;">How you pay</h2>
+    <p style="color:var(--mut);margin:0;">Send USDC (Base) to the address below, paste the tx hash into the Hub, and your tool unlocks instantly:</p>
+    <div class="addr">0x2409b47a530be3831158f10b08ac93f7d08c1ff2</div>
+    <a class="link" href="https://foxxx009.github.io/wallet-security-hub/" target="_blank" rel="noopener">→ Try it now (free preview of every module)</a>
+  </div>
+</main>
+
+<footer>
+  Wallet Security Hub · client-side Web3 security toolkit · USDC (Base) pay-as-you-go<br/>
+  Live: <a class="link" href="https://foxxx009.github.io/wallet-security-hub/" target="_blank" rel="noopener">foxxx009.github.io/wallet-security-hub</a>
+</footer>
+</body>
+</html>
