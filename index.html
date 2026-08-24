@@ -4,6 +4,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Web3 Wallet Security Hub · Scan · Approvals · Blacklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#070a12; --panel:#0f1420; --panel2:#161d2e; --line:#232c42;
@@ -11,13 +14,15 @@
     --warn:#f5a623; --bad:#ff5c5c; --usdc:#2775ca;
     --shadow:0 8px 28px rgba(0,0,0,.45);
     --radius:16px;
+    --font-sans:"Inter","Noto Sans SC",system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#10182b 0%,var(--bg) 55%);color:var(--txt);font-family:"Segoe UI",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#10182b 0%,var(--bg) 55%);color:var(--txt);font-family:var(--font-sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-feature-settings:"cv11","ss01";letter-spacing:.1px}
   .wrap{max-width:920px;margin:0 auto;padding:26px 18px 96px}
   header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4f8cff,#3ecf8e 55%,#ff5c5c);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;box-shadow:0 6px 18px rgba(79,140,255,.35)}
-  h1{font-size:22px;margin:0;letter-spacing:-.3px}
+  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4f8cff,#3ecf8e 55%,#ff5c5c);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;box-shadow:0 6px 18px rgba(79,140,255,.35);font-family:var(--font-sans);letter-spacing:-.5px}
+  h1{font-size:22px;margin:0;letter-spacing:-.4px;font-weight:700}
   .tag{font-size:12.5px;color:var(--muted);margin-top:2px}
   .lang{margin-left:auto;display:flex;gap:6px}
   .lang button{background:var(--panel2);border:1px solid var(--line);color:var(--muted);padding:7px 13px;font-size:13px;border-radius:9px;cursor:pointer;transition:.15s}
@@ -41,7 +46,7 @@
   .card.round{border-radius:var(--radius);margin-top:16px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   input,select{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:12px 14px;font-size:15px;outline:none}
-  input{flex:1;min-width:240px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  input{flex:1;min-width:240px;font-family:var(--font-mono);font-size:14px}
   input:focus,select:focus{border-color:var(--accent)}
   button{cursor:pointer;border:none;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:600;background:linear-gradient(135deg,var(--accent),#6aa3ff);color:#fff;transition:.15s;box-shadow:0 4px 14px rgba(79,140,255,.25)}
   button:hover{filter:brightness(1.08);transform:translateY(-1px)}
@@ -54,7 +59,7 @@
   .kv{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
   .kv:last-child{border-bottom:none}
   .kv .k{color:var(--muted);flex-shrink:0}
-  .kv .v{text-align:right;word-break:break-all;font-family:ui-monospace,Menlo,monospace;font-size:13px}
+  .kv .v{text-align:right;word-break:break-all;font-family:var(--font-mono);font-size:13px}
   .flag{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:600;margin:3px 4px 3px 0}
   .f-good{background:rgba(34,197,94,.15);color:var(--good)}
   .f-warn{background:rgba(245,158,11,.15);color:var(--warn)}
@@ -89,19 +94,19 @@
   .apv-row{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel2)}
   .apv-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
   .apv-token{font-weight:600;font-size:14px}
-  .apv-spender{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);word-break:break-all;margin-top:4px}
+  .apv-spender{font-family:var(--font-mono);font-size:12px;color:var(--muted);word-break:break-all;margin-top:4px}
   .apv-amt{font-size:13px;margin-top:4px}
   .apv-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
   .b-high{background:rgba(239,68,68,.18);color:var(--bad)}
   .b-mid{background:rgba(245,158,11,.18);color:var(--warn)}
   .b-low{background:rgba(34,197,94,.15);color:var(--good)}
   .infinite{color:var(--bad);font-weight:700}
-  .result-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all;white-space:pre-wrap}
+  .result-box{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;font-family:var(--font-mono);font-size:12px;word-break:break-all;white-space:pre-wrap}
   .verdict{text-align:center;font-weight:700;padding:8px;border-radius:8px;margin-top:10px;font-size:14px}
   .chain-tbl{width:100%;border-collapse:collapse;font-size:13px}
   .chain-tbl th,.chain-tbl td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
   .chain-tbl th{color:var(--muted);font-weight:600}
-  .holder-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);font-family:ui-monospace,Menlo,monospace}
+  .holder-row{display:flex;justify-content:space-between;gap:10px;font-size:12px;padding:4px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono)}
   .scam-hit{border:1px solid var(--bad);background:rgba(239,68,68,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   @media(max-width:560px){.audit-grid{grid-template-columns:1fr}.tabs{grid-template-columns:repeat(2,1fr)}.tab{font-size:13px;padding:10px 8px 10px 11px}.hero{flex-direction:column;align-items:flex-start}.hero .h-badge{margin-left:0}}
 </style>
