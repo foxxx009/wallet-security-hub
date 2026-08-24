@@ -1,7 +1,7 @@
 # Wallet Security Hub — English Distribution Copy
 
 **One-line pitch (X / Twitter / bio):**
-> 🔐 Wallet Security Hub — 6 on-chain tools in one page. Scan contracts, audit approvals, check blacklists, estimate gas, compare bytecode, and dry-run any tx before you send it. Pay-as-you-go in USDC, no backend, no KYC. → https://nope-9uk.pages.dev/
+> 🔐 Wallet Security Hub — 6 on-chain tools in one page. Scan contracts, audit approvals, check blacklists, estimate gas, compare bytecode, and dry-run any tx before you send it. Pay-as-you-go in USDC, no backend, no KYC. → https://foxxx009.github.io/wallet-security-hub/
 
 **Short post (Reddit / Discord / Telegram):**
 > Tired of copy-paste wallet checkers that ask you to connect your wallet? Wallet Security Hub is a fully client-side, no-backend toolkit that runs everything against public RPC nodes. Six modules:
@@ -12,7 +12,7 @@
 > • 🔬 Contract Similarity — compare bytecode to malicious templates ($0.04)
 > • 🎯 Tx Simulate — dry-run any unsigned tx to see if it reverts + post-exec impact ($0.06)
 >
-> No signup, no KYC, no wallet connection. Each unlock is a direct USDC (Base) transfer verified on-chain. Try it: https://nope-9uk.pages.dev/
+> No signup, no KYC, no wallet connection. Each unlock is a direct USDC (Base) transfer verified on-chain. Try it: https://foxxx009.github.io/wallet-security-hub/
 
 **GitHub repo description (≤350 chars):**
 > Client-side Web3 wallet security toolkit — 6 on-chain modules (SafeScan / Approval Guard / Blacklist / Gas / Similarity / Tx Simulate). Pay-as-you-go in USDC, no backend, no KYC.
