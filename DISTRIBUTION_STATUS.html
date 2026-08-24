@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Wallet Security Hub — Distribution Status</title>
+<style>
+  :root{--bg:#0b0e14;--card:#141925;--fg:#e6e9ef;--mut:#9aa4b2;--ok:#3ecf8e;--warn:#f5a623;--acc:#4f8cff;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  header{padding:26px 20px 10px;border-bottom:1px solid #1f2633;}
+  h1{margin:0 0 4px;font-size:21px;}
+  .sub{color:var(--mut);font-size:14px;}
+  main{max-width:880px;margin:0 auto;padding:18px;}
+  .card{background:var(--card);border:1px solid #232b3a;border-radius:12px;padding:16px 18px;margin:14px 0;}
+  .card h2{margin:0 0 10px;font-size:16px;color:var(--acc);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #20283a;vertical-align:top;}
+  th{color:var(--mut);font-weight:600;}
+  .ok{color:var(--ok);font-weight:600;}
+  .warn{color:var(--warn);font-weight:600;}
+  .mut{color:var(--mut);}
+  code{background:#0e1320;padding:1px 5px;border-radius:4px;font:12px ui-monospace,Menlo,Consolas,monospace;color:#cdd6e4;}
+  ul{margin:6px 0 0;padding-left:18px;}
+  li{margin:4px 0;}
+</style>
+</head>
+<body>
+<header>
+  <h1>Wallet Security Hub — Distribution Status</h1>
+  <div class="sub">Live: <span style="color:var(--ok)">https://foxxx009.github.io/wallet-security-hub/</span> · Updated 2026-08-23</div>
+</header>
+<main>
+
+<div class="card">
+  <h2>✅ Automated (no manual action needed)</h2>
+  <table>
+    <tr><th>Channel</th><th>Status</th><th>Notes</th></tr>
+    <tr><td>IndexNow (Bing)</td><td class="ok">202 ✓</td><td>Auto-ping daily via <code>submit_indexnow.py</code> + automation <code>1787430304007</code></td></tr>
+    <tr><td>IndexNow (Yandex)</td><td class="ok">202 ✓</td><td><code>success:true</code> —收录排队</td></tr>
+    <tr><td>IndexNow central</td><td class="warn">network reset</td><td>Sandbox dropped conn; Bing/Yandex already broadcast it. Will retry on next daily run.</td></tr>
+    <tr><td>Key file hosted</td><td class="ok">200 ✓</td><td><code>https://foxxx009.github.io/wallet-security-hub/36bfc1ff8475f0de23891fe7c636c70e.txt</code></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🟡 Needs a free API key, then fully automated</h2>
+  <table>
+    <tr><th>Channel</th><th>Effort</th><th>Notes</th></tr>
+    <tr><td>Bing Webmaster URL Submission API</td><td class="warn">you paste 1 key</td><td>Free key at webmaster.bing.com → once set, script submits URL list, more reliable than IndexNow. I will wire it up on request.</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🔴 Requires manual login — NOT scriptable (verified)</h2>
+  <table>
+    <tr><th>Channel</th><th>Why blocked</th><th>Value if you do it manually</th></tr>
+    <tr><td>Product Hunt</td><td>OAuth login + launch window</td><td>High — best traffic source</td></tr>
+    <tr><td>AlternativeTo</td><td>Login + editor review</td><td>Medium</td></tr>
+    <tr><td>BetaList</td><td>Login + approval</td><td>Medium</td></tr>
+    <tr><td>Reddit / X / HN</td><td>Login required, auto-post = ban</td><td>High but you must do it</td></tr>
+    <tr><td>Web3 dirs (console.dev, dappradar, cryptowisser, stateofdapps)</td><td>404 or login wall (verified)</td><td>Low — mostly dead/inactive</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>🧩 Product matrix (8 pay-as-you-go modules, all live)</h2>
+  <table>
+    <tr><th>Module</th><th>Price</th><th>What it does</th></tr>
+    <tr><td>Address Scan (SafeScan)</td><td>$0.05</td><td>Permission audit + liquidity lock + rug-risk score</td></tr>
+    <tr><td>Approval Guard</td><td>$0.02</td><td>List ERC-20/721 approvals, generate revoke tx</td></tr>
+    <tr><td>Contract Blacklist</td><td>$0.03</td><td>Honeypot/backdoor trait check + known scam hits</td></tr>
+    <tr><td>Gas Estimator</td><td>Free</td><td>Live gas + common-op cost + tx pre-check</td></tr>
+    <tr><td>Contract Match</td><td>$0.04</td><td>Bytecode similarity vs malicious templates</td></tr>
+    <tr><td>Tx Simulate</td><td>$0.06</td><td>Dry-run a tx + post-exec impact report</td></tr>
+    <tr><td><b>Approval Sweeper</b> (new)</td><td>$0.05</td><td>Risk-scored approval sweep + batch revoke-tx generator</td></tr>
+    <tr><td><b>Tx Decoder</b> (new)</td><td>$0.05</td><td>Decode any Base tx: method, contracts, transfers, events</td></tr>
+  </table>
+  <p class="mut">All payments settle in USDC (Base) on-chain via Transfer receipt verification — no backend, no KYC, no platform fee. Total addressable upsell per visitor: up to $0.30.</p>
+</div>
+
+<div class="card">
+  <h2>📋 Recommended next steps</h2>
+  <ul>
+    <li><b>Keep the daily IndexNow ping running</b> — already automated, zero effort.</li>
+    <li><b>Give me a Bing Webmaster API key</b> — I wire it up, then search-index submission is 100% hands-off.</li>
+    <li><b>Spend ~10 min manually</b> on Product Hunt + one Reddit crypto sub (copy from <code>PROMO_PACK.html</code>) — this is where real traffic comes from; no script can do it for you.</li>
+    <li><b>Optional:</b> buy a short custom domain (e.g. <code>nope.gg</code>) and CNAME to Cloudflare for a cleaner link + better trust.</li>
+  </ul>
+</div>
+
+</main>
+</body>
+</html>
