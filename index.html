@@ -122,10 +122,10 @@
 
   <div class="hero">
     <div>
-      <div class="h-main">9 个链上安全工具 · <b>免后端 · 不连钱包 · 不收 KYC</b></div>
+      <div class="h-main" data-i18n="heroMain">9 个链上安全工具 · <b>免后端 · 不连钱包 · 不收 KYC</b></div>
       <div class="h-sub" data-i18n="heroSub">所有检查在浏览器内对你的地址直接跑，USDC（Base）按次付费，链上验证后解锁。</div>
     </div>
-    <div class="h-badge"><span class="dot"></span>收款 · 0x2409…c1ff2</div>
+    <div class="h-badge"><span class="dot"></span><span data-i18n="recvBadge">收款 · 0x2409…c1ff2</span></div>
   </div>
 
   <div class="tabs">
@@ -704,7 +704,8 @@ const T = {
     advice_new:"该地址无交易历史——视为未验证，切勿盲目转账。", advice_contract:"合约地址但无交易记录——可能未部署或空合约，高风险。",
     advice_scam:"地址命中已知 scam/黑名单——请勿交互。", advice_proxy:"检测到代理合约——owner 可升级逻辑，请确认管理员已放弃权限或多签。",
     advice_apv:"请在授权巡检 Tab 撤销 N 条活跃授权以降低被盗风险。", advice_ok:"本次扫描未发现严重风险，大额转账前仍请二次验证。",
-    heroSub:"所有检查在浏览器内对你的地址直接跑，USDC（Base）按次付费，链上验证后解锁。"
+    heroSub:"所有检查在浏览器内对你的地址直接跑，USDC（Base）按次付费，链上验证后解锁。",
+    heroMain:"9 个链上安全工具 · 免后端 · 不连钱包 · 不收 KYC", recvBadge:"收款 · 0x2409…c1ff2"
   },
   en:{
     appTag:"Address scan · Approval guard · Contract blacklist · one entry for wallet safety",
@@ -833,7 +834,8 @@ const T = {
     advice_new:"Address has no transaction history — treat as unproven; do not send funds blindly.", advice_contract:"Contract address with no transactions — likely undeployed or empty; high risk.",
     advice_scam:"Address is on known scam/blacklist — do NOT interact.", advice_proxy:"Proxy contract detected — owner can upgrade logic; verify admin is renounced or multisig.",
     advice_apv:"Revoke active approvals in the Approval Guard tab to reduce drain risk.", advice_ok:"No critical risks in this scan; always verify before large transfers.",
-    heroSub:"Every check runs in your browser against your address. Pay per use in USDC (Base), unlocked after on-chain verification."
+    heroSub:"Every check runs in your browser against your address. Pay per use in USDC (Base), unlocked after on-chain verification.",
+    heroMain:"9 on-chain security tools · No backend · No wallet connection · No KYC", recvBadge:"Receiving · 0x2409…c1ff2"
   }
 };
 let lang = (localStorage.getItem('hub_lang')||'en');
