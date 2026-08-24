@@ -6,7 +6,7 @@
 <title>Web3 Wallet Security Hub · Scan · Approvals · Blacklist</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#070a12; --panel:#0f1420; --panel2:#161d2e; --line:#232c42;
@@ -14,14 +14,14 @@
     --warn:#f5a623; --bad:#ff5c5c; --usdc:#2775ca;
     --shadow:0 8px 28px rgba(0,0,0,.45);
     --radius:16px;
-    --font-sans:"Inter","Noto Sans SC",system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --font-sans:"Space Grotesk","Noto Sans SC",system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
     --font-mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#10182b 0%,var(--bg) 55%);color:var(--txt);font-family:var(--font-sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-feature-settings:"cv11","ss01";letter-spacing:.1px}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#10182b 0%,var(--bg) 55%);color:var(--txt);font-family:var(--font-sans);line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;letter-spacing:.2px}
   .wrap{max-width:920px;margin:0 auto;padding:26px 18px 96px}
   header{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4f8cff,#3ecf8e 55%,#ff5c5c);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;color:#fff;box-shadow:0 6px 18px rgba(79,140,255,.35);font-family:var(--font-sans);letter-spacing:-.5px}
+  .logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#4f8cff,#3ecf8e 55%,#ff5c5c);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:21px;color:#fff;box-shadow:0 6px 18px rgba(79,140,255,.35);font-family:var(--font-sans);letter-spacing:-.5px}
   h1{font-size:22px;margin:0;letter-spacing:-.4px;font-weight:700}
   .tag{font-size:12.5px;color:var(--muted);margin-top:2px}
   .lang{margin-left:auto;display:flex;gap:6px}
@@ -75,7 +75,7 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   code{background:var(--panel2);padding:1px 6px;border-radius:5px;font-size:12px}
   a{color:var(--accent)}
-  .score{font-size:46px;font-weight:800;text-align:center;margin:6px 0}
+  .score{font-size:46px;font-weight:700;text-align:center;margin:6px 0;letter-spacing:-1px}
   .score-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:10px}
   .audit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
   .audit-item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -89,7 +89,7 @@
   .toolbar button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);padding:8px 14px;font-size:13px;border-radius:8px}
   .summary-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .summary-pill{flex:1;min-width:110px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-align:center}
-  .summary-pill .n{font-size:24px;font-weight:800}
+  .summary-pill .n{font-size:24px;font-weight:700;letter-spacing:-.5px}
   .summary-pill .l{font-size:12px;color:var(--muted)}
   .apv-row{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel2)}
   .apv-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
